@@ -27,7 +27,8 @@ class SoftTripleLoss(tf.keras.layers.Layer):
         base_config = super(SoftTripleLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-    def loss_fn(self, embeddings, labels, batch_size, p_lambda=20.0, p_tau=0.2, p_gamma=0.1, p_delta=0.01):
+    def loss_fn(self, embeddings, labels, p_lambda=20.0, p_tau=0.2, p_gamma=0.1, p_delta=0.01):
+        batch_size = tf.shape(embeddings)[0]
         large_centers = tf.nn.l2_normalize(self.large_centers, axis=-1)
         embeddings = tf.nn.l2_normalize(embeddings, axis=-1)
         large_logits = tf.matmul(embeddings, large_centers, transpose_b=True)
