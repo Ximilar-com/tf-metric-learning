@@ -56,7 +56,7 @@ class SoftTripleLoss(tf.keras.layers.Layer):
         return loss
 
     def call(self, embeddings, labels):
-        loss = self.loss_fn(embeddings, labels, tf.shape(embeddings)[0])
+        loss = self.loss_fn(embeddings, labels)
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
         return embeddings, labels

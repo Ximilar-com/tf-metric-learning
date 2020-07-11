@@ -51,8 +51,28 @@ model.fit(data, None, epochs=10, batch_size=10)
 
 #### Visualizations
 
-* Tensorboard Projector Callback [TODO]
+* Tensorboard Projector Callback
+
+```python
+import tensorflow as tf
+from tf_metric_learning.utils.projector import TBProjectorCallback
+
+def normalize_images(images):
+    return images/255.0
+
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
+...
+
+projector = TBProjectorCallback(
+    base_model,
+    "log_dir",
+    test_images,
+    np.squeeze(test_labels),
+    normalize_eb=True,
+    normalize_fn=normalize_images
+)
+```
 
 #### Examples
 
-* Simplet NPair Training on CIFAR 10 dataset
+* Simplet NPair Training on CIFAR 10 dataset with embeddings projector (**[LINK](examples/soft_triple.py)**)

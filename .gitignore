@@ -1,2 +1,6 @@
+tf_metric_learning.egg-info
+*.png
+tmp
+tb
 *.pyc
 __pycache__
