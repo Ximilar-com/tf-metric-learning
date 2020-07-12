@@ -38,7 +38,7 @@ model.fit(data, None, epochs=10, batch_size=10)
 #### Loss functions
 
 * [MultiSimilarityLoss](https://arxiv.org/abs/1904.06627) [TODO]
-* [ProxyAnchorLoss](https://arxiv.org/abs/2003.13911) [TODO]
+* [ProxyAnchorLoss](https://arxiv.org/abs/2003.13911) ✅
 * [SoftTripleLoss](https://arxiv.org/abs/1909.05235) ✅
 * [NPairLoss](http://www.nec-labs.com/uploads/images/Department-Images/MediaAnalytics/papers/nips16_npairmetriclearning.pdf) ✅
 * [TripletLoss](https://papers.nips.cc/paper/2795-distance-metric-learning-for-large-margin-nearest-neighbor-classification.pdf) [TODO]
