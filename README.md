@@ -1,13 +1,15 @@
 # tf-metric-learning
 
+[![TensorFlow 2.2](https://img.shields.io/badge/TensorFlow-2.2-FF6F00?logo=tensorflow)](https://github.com/tensorflow/tensorflow/releases/tag/v2.2.0) [![Python 3.6](https://img.shields.io/badge/Python-3.6-3776AB)](https://www.python.org/downloads/release/python-360/)
+
 ## Overview
 
-This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
+Minimalistic open-source library for metric learning written in TensorFlow2, Numpy and OpenCV(CV2). This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
 
 All the loss functions are implemented as tf.keras.layers.Layer.
 
 #### Open-source repos
-This library contains code that has been adapted and modified from the following great open-source repos:
+This library contains code that has been adapted and modified from the following great open-source repos, without them this will be not possible (THANK YOU):
 
 * [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning)
 * [geonm](https://github.com/geonm?tab=repositories)
@@ -18,7 +20,7 @@ This library contains code that has been adapted and modified from the following
 ```python
 import tensorflow as tf
 import numpy as np
-from tf_metric_learning.layers.soft_triple import SoftTripleLoss
+from tf_metric_learning.layers import SoftTripleLoss
 
 num_class, num_centers, embedding_size = 10, 2, 256
 
@@ -41,13 +43,17 @@ model.fit(data, None, epochs=10, batch_size=10)
 * [ProxyAnchorLoss](https://arxiv.org/abs/2003.13911) ✅
 * [SoftTripleLoss](https://arxiv.org/abs/1909.05235) ✅
 * [NPairLoss](http://www.nec-labs.com/uploads/images/Department-Images/MediaAnalytics/papers/nips16_npairmetriclearning.pdf) ✅
-* [TripletLoss](https://papers.nips.cc/paper/2795-distance-metric-learning-for-large-margin-nearest-neighbor-classification.pdf) [TODO]
-* [ContrastiveLoss](http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf) [TODO]
+* [TripletLoss](https://papers.nips.cc/paper/2795-distance-metric-learning-for-large-margin-nearest-neighbor-classification.pdf) ✅
+* [ContrastiveLoss](http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf) ✅
 
 #### Miners
 
 * MaximumLossMiner [TODO]
 * HardTripletMiner [TODO]
+
+#### Evaluators
+
+* AnnoyEvaluator Callback [TODO]
 
 #### Visualizations
 
@@ -75,4 +81,9 @@ projector = TBProjectorCallback(
 
 #### Examples
 
-* Simplet NPair Training on CIFAR 10 dataset with embeddings projector (**[LINK](examples/soft_triple.py)**)
+* Simple SoftTriple Training on CIFAR 10 with embeddings projector (**[LINK](examples/cifar10.py)**)
+* ProxyAnchor Loss on Cars196, using tf.data.Dataset and projector  (**[LINK](examples/cars196.py)**)
+* NPair Loss with MaximumLossMiner [TODO]
+* TripletTraining [TODO]
+* ContrastiveLoss on MNIST [TODO]
+* Simple Classification on Cars196 with Projector Visualization and Evaluator [TODO]

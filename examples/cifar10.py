@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import copy
 
-from tf_metric_learning.layers.soft_triple import SoftTripleLoss
+from tf_metric_learning.layers import SoftTripleLoss
 from tf_metric_learning.utils.projector import TBProjectorCallback
 
 

@@ -7,7 +7,7 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
 
         self.margin = margin
         self.alpha = alpha
-        self.num_class = num_class
+        self.num_class = int(num_class)
         self.embeddings_size = embeddings_size
 
     def build(self, input_shape):
@@ -22,7 +22,7 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
     def get_config(self):
         config = {
             "num_class": self.num_class,
-            "embeddings_size": self.embeddings_size
+            "embeddings_size": self.embeddings_size,
             "margin": self.margin,
             "alpha": self.alpha
         }
@@ -33,7 +33,7 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
         embeddings_l2 = tf.nn.l2_normalize(embeddings, axis=1)
         proxy_l2 = tf.nn.l2_normalize(self.proxy, axis=1)
 
-        pos_target = tf.one_hot(labels, self.num_class, dtype=tf.float32)
+        pos_target = tf.one_hot(tf.cast(labels, tf.int32), self.num_class, dtype=tf.float32)
         neg_target = 1.0 - pos_target
 
         sim_mat = tf.matmul(embeddings_l2, proxy_l2, transpose_b=True)

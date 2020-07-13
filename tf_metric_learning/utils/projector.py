@@ -14,13 +14,14 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
     """
     Callback, extracts embeddings and add them to TensorBoard Projector.
     """
-    def __init__(self, model, log_dir, data_images, data_labels, image_size=32, freq=1, batch_size=None, normalize_eb=True, normalize_fn=None, **kwargs):
+    def __init__(self, model, log_dir, data_images, data_labels, show_images=True, image_size=32, freq=1, batch_size=None, normalize_eb=True, normalize_fn=None, **kwargs):
         """
         Initialize callback.
         :param model: base model, should output embeddings
         :param log_dir: path to the tensorboard directory
         :param data_images: list of images
         :param data_labels: list of labels
+        :param show_images: if we want to visualize image as point in projector (True)
         :param image_size: sprite image size, defaults to 32
         :param freq: default 1 (create projector every epoch)
         :param batch_size: None
@@ -36,6 +37,7 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
         self.batch_size = batch_size
         self.freq = int(freq)
         self.log_dir = log_dir
+        self.show_images = show_images
         self.normalize_eb = normalize_eb
         self.normalize_fn = normalize_fn
 
@@ -59,11 +61,17 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
         saver.save(sess=None, global_step=epoch, save_path=os.path.join(self.log_dir, EMBEDDINGS + ".ckpt"))
 
     def save_labels_tsv(self, labels):
+        if os.path.exists(os.path.join(self.log_dir, METAFILE)):
+            return
+
         with open(os.path.join(self.log_dir, METAFILE), 'w') as f:
             for label in labels:
                 f.write('{}\n'.format(str(label)))
 
     def create_sprite(self, images):
+        if os.path.exists(os.path.join(self.log_dir, SPRITESFILE)) or not self.show_images:
+            return
+
         data = np.asarray([cv2.resize(image, (self.image_size, self.image_size)) for image in images])
 
         # for black & white or greyscale images
@@ -87,6 +95,8 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
         embedding.metadata_path = METAFILE
 
         # this adds the sprite images
-        embedding.sprite.image_path = SPRITESFILE
-        embedding.sprite.single_image_dim.extend((self.image_size, self.image_size))
+        if self.show_images:
+            embedding.sprite.image_path = SPRITESFILE
+            embedding.sprite.single_image_dim.extend((self.image_size, self.image_size))
+
         projector.visualize_embeddings(self.log_dir, config)
