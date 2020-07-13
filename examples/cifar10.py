@@ -10,13 +10,14 @@ def normalize_images(images):
     return images/255.0
 
 # load data images
+BATCH_SIZE = 32
 embedding_size, num_class, num_centers = 256, 10, 10
 input_shape = (32, 32, 3)
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
 
 # define base network for embeddings
 inputs = tf.keras.Input(shape=input_shape, name="images")
-model = tf.keras.applications.MobileNetV2(input_shape=input_shape, include_top=False, weights="imagenet", layers=tf.keras.layers)(inputs)
+model = tf.keras.applications.MobileNetV2(input_shape=input_shape, include_top=False, weights="imagenet")(inputs)
 pool = tf.keras.layers.GlobalAveragePooling2D()(model)
 dropout = tf.keras.layers.Dropout(0.5)(pool)
 embeddings = tf.keras.layers.Dense(units = embedding_size)(dropout)
@@ -28,7 +29,7 @@ output_tensor = SoftTripleLoss(num_class, num_centers, embedding_size)(base_netw
 
 # define the model and compile it
 model = tf.keras.Model(inputs=[inputs, input_label], outputs=output_tensor)
-model.compile(optimizer="adam")
+model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001))
 
 # create simple callback for projecting embeddings after every epoch
 # tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
@@ -37,7 +38,7 @@ projector = TBProjectorCallback(
     "tb",
     copy.deepcopy(test_images),
     np.squeeze(test_labels),
-    batch_size=100,
+    batch_size=BATCH_SIZE,
     normalize_fn=normalize_images
 )
 
@@ -58,5 +59,5 @@ model.fit(
     callbacks=[projector],
     shuffle=True,
     epochs=20,
-    batch_size=100
+    batch_size=BATCH_SIZE
 )

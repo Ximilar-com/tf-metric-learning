@@ -14,7 +14,7 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
         self.proxy = self.add_weight(
             name="proxy",
             shape=[self.num_class, self.embeddings_size],
-            initializer="random_normal", 
+            initializer="he_normal", 
             trainable=True,
             dtype=tf.float32
         )
@@ -29,20 +29,22 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
         base_config = super(ProxyAnchorLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
+    @tf.function
     def loss_fn(self, embeddings, labels):
         embeddings_l2 = tf.nn.l2_normalize(embeddings, axis=1)
         proxy_l2 = tf.nn.l2_normalize(self.proxy, axis=1)
 
+        labels = tf.reshape(labels, [-1])
         pos_target = tf.one_hot(tf.cast(labels, tf.int32), self.num_class, dtype=tf.float32)
         neg_target = 1.0 - pos_target
 
         sim_mat = tf.matmul(embeddings_l2, proxy_l2, transpose_b=True)
 
-        pos_mat = tf.exp(-self.alpha * (sim_mat - self.margin)) * pos_target
-        neg_mat = tf.exp(self.alpha * (sim_mat + self.margin)) * neg_target
+        pos_exp = tf.exp(-self.alpha * (sim_mat - self.margin))
+        neg_exp = tf.exp(self.alpha * (sim_mat + self.margin))
 
-        P_sim_sum = tf.reduce_sum(pos_mat, axis=0)
-        N_sim_sum = tf.reduce_sum(neg_mat, axis=0)
+        P_sim_sum = tf.reduce_sum(pos_exp * pos_target, axis=0)
+        N_sim_sum = tf.reduce_sum(neg_exp * neg_target, axis=0)
 
         num_valid_proxies = tf.math.count_nonzero(tf.reduce_sum(pos_target, axis=0), dtype=tf.dtypes.float32)
 

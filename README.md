@@ -87,3 +87,4 @@ projector = TBProjectorCallback(
 * TripletTraining [TODO]
 * ContrastiveLoss on MNIST [TODO]
 * Simple Classification on Cars196 with Projector Visualization and Evaluator [TODO]
+* Todo discriminative layer optimizer [TODO](https://github.com/tensorflow/addons/pull/969)
