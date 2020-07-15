@@ -24,12 +24,18 @@ def load_img_train(image, label):
     image = tf.image.random_brightness(image, max_delta=0.1)
     return {"images": image, "labels": label}, label
 
+def filter_train(image, label):
+    return label < 98
+
 @tf.function
 def load_img_test(image, label):
     """Normalizes images: `uint8` -> `float32`."""
     image = tf.image.convert_image_dtype(image, tf.float32)
     image = tf.image.resize(image, [IMG_SIZE , IMG_SIZE])
     return {"images": image, "labels": label}, label
+
+def filter_test(image, label):
+    return label >= 98
 
 def normalize_images(images):
     return images / 255.0
@@ -49,23 +55,30 @@ def scheduler(epoch):
     with_info=True,
 )
 
-ds_train = ds_train.map(
-    load_img_train, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-ds_train = ds_train.shuffle(ds_info.splits['train'].num_examples)
-ds_train = ds_train.batch(BATCH_SIZE)
+# filter the train and test set by the classes
+ds_to_train = ds_train.concatenate(ds_test).filter(filter_train)
+ds_to_test = ds_test.concatenate(ds_train).filter(filter_test)
 
-ds_test = ds_test.map(load_img_test, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+ds_to_train = ds_to_train.map(
+    load_img_train, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+ds_to_train = ds_to_train.shuffle(3000)
+ds_to_train = ds_to_train.batch(BATCH_SIZE)
+
+ds_to_test = ds_to_test.map(load_img_test, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
 test_images, test_labels = [], []
-for data , label in tfds.as_numpy(ds_test):
+for data , label in tfds.as_numpy(ds_to_test):
     # for projector we need to convert the image from 0-1 back to 0-255
     image = np.squeeze(copy.deepcopy(data["images"]))*255.0
     test_images.append(image)
     test_labels.append(label)
 
-ds_test = ds_test.shuffle(ds_info.splits['test'].num_examples).cache().batch(BATCH_SIZE)
+test_images = np.asarray(test_images)
+test_labels = np.squeeze(test_labels)
 
-embedding_size, num_class, num_centers = 128, 196, 10
+ds_to_test = ds_to_test.shuffle(len(test_images)).cache().batch(BATCH_SIZE)
+
+embedding_size, num_class, num_centers = 128, int(196/2), 10
 input_shape = (IMG_SIZE, IMG_SIZE, 3)
 
 # define base network for embeddings
@@ -87,8 +100,6 @@ model.summary()
 scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
 
-test_images = np.asarray(test_images)
-test_labels = np.squeeze(test_labels)
 
 # create simple callback for projecting embeddings after every epoch
 projector = TBProjectorCallback(
@@ -102,6 +113,7 @@ projector = TBProjectorCallback(
     normalize_eb=True,
 )
 
+# callback for recall evaluation
 divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
@@ -109,12 +121,12 @@ evaluator = AnnoyEvaluatorCallback(
     {"images": test_images[:divide], "labels": test_labels[:divide]},
     {"images": test_images[divide:], "labels": test_labels[divide:]},
     normalize_eb=True,
-    emb_size=embedding_size
+    emb_size=embedding_size,
+    freq=5,
 )
 
 model.fit(
-    ds_train,
-    validation_data=ds_test,
+    ds_to_train,
     callbacks=[evaluator, scheduler_cb, projector],
     epochs=EPOCHS
 )
