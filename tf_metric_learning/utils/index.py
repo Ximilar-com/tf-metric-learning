@@ -25,6 +25,10 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
     def get_label(self, index):
         return self.ids[index]
 
+    def load_index_file(self, file_path):
+        self.index = AnnoyIndex(self.emb_size, self.metric)
+        self.index.load(file_path, prefault=False)
+
     def reindex(self, embeddings):
         self.index = AnnoyIndex(self.emb_size, self.metric)
 

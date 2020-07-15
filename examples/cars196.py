@@ -65,7 +65,7 @@ for data , label in tfds.as_numpy(ds_test):
 
 ds_test = ds_test.shuffle(ds_info.splits['test'].num_examples).cache().batch(BATCH_SIZE)
 
-embedding_size, num_class, num_centers = 256, 196, 10
+embedding_size, num_class, num_centers = 128, 196, 10
 input_shape = (IMG_SIZE, IMG_SIZE, 3)
 
 # define base network for embeddings
