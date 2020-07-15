@@ -40,7 +40,7 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
             recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 3, 5, 10, 20])
             results.append(recalls)
 
-        print("Recall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(results), axis=0))
+        print("\nRecall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(results), axis=0),"\n")
 
     def eval_recall(self, annoy_results, label, recalls):
         return [1 if label in annoy_results[:recall_n] else 0 for recall_n in recalls]

@@ -118,8 +118,8 @@ divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
     "annoy",
-    {"images": test_images[:divide], "labels": test_labels[:divide]},
-    {"images": test_images[divide:], "labels": test_labels[divide:]},
+    {"images": normalize_images(test_images[:divide]), "labels": test_labels[:divide]},
+    {"images": normalize_images(test_images[divide:]), "labels": test_labels[divide:]},
     normalize_eb=True,
     emb_size=embedding_size,
     freq=5,
