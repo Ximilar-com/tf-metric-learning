@@ -53,7 +53,21 @@ model.fit(data, None, epochs=10, batch_size=10)
 
 #### Evaluators
 
-* AnnoyEvaluator Callback [TODO]
+* AnnoyEvaluator Callback: for evaluation Recall@K, you will need to install Spotify [annoy](https://github.com/spotify/annoy) library.
+
+```python
+import tensorflow as tf
+from tf_metric_learning.utils.recall import AnnoyEvaluatorCallback
+
+evaluator = AnnoyEvaluatorCallback(
+    base_model,
+    "log_dir",
+    {"images": [...], "labels": [...]}, # images to store in index
+    {"images": [...], "labels": [...]}, # images to query
+    emb_size=256,
+    metric="euclidean"
+)
+```
 
 #### Visualizations
 
@@ -72,7 +86,7 @@ def normalize_images(images):
 projector = TBProjectorCallback(
     base_model,
     "log_dir",
-    test_images,
+    test_images, # list of images
     np.squeeze(test_labels),
     normalize_eb=True,
     normalize_fn=normalize_images
