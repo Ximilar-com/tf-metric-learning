@@ -55,8 +55,29 @@ class SoftTripleLoss(tf.keras.layers.Layer):
         loss = tf.reduce_mean(loss, name="loss_xentropy")
         return loss
 
+    def regularization(self, p_lambda=20.0, p_tau=0.2, p_gamma=0.1, p_delta=0.01):
+        large_centers = tf.nn.l2_normalize(self.large_centers, axis=-1)
+        sim_large_centers = tf.abs(tf.matmul(large_centers, large_centers, transpose_b=True)) # [num_class * num_centers, num_class * num_centers]
+
+        dist_large_centers = tf.sqrt(tf.abs(2.0 - 2.0 * sim_large_centers) + 1e-10)
+        checkerboard = tf.range(self.num_class, dtype=tf.int32)
+        checkerboard = tf.one_hot(checkerboard, depth=self.num_class, dtype=tf.float32)
+        checkerboard = tf.keras.backend.repeat_elements(checkerboard, self.num_centers, axis=0)
+        checkerboard = tf.keras.backend.repeat_elements(checkerboard, self.num_centers, axis=1)
+
+        dist_large_centers = tf.multiply(dist_large_centers, checkerboard)
+        mask = tf.ones_like(dist_large_centers, dtype=tf.float32) - tf.eye(self.num_class * self.num_centers, dtype=tf.float32)
+        dist_large_centers = p_tau * tf.multiply(dist_large_centers, mask)
+        reg_numer = tf.reduce_sum(dist_large_centers) / 2.0
+        reg_denumer = self.num_class * self.num_centers * (self.num_centers - 1.0)
+
+        loss_reg = reg_numer / reg_denumer
+        return loss_reg
+
     def call(self, embeddings, labels):
         loss = self.loss_fn(embeddings, labels)
-        self.add_loss(loss)
+        reg_loss = self.regularization()
+        self.add_loss(loss+reg_loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
+        self.add_metric(reg_loss, name=self.name+"_reg", aggregation="mean")
         return embeddings, labels

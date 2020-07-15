@@ -18,7 +18,7 @@ input_shape = (32, 32, 3)
 
 # define base network for embeddings
 inputs = tf.keras.Input(shape=input_shape, name="images")
-model = tf.keras.applications.MobileNetV2(input_shape=input_shape, include_top=False, weights="imagenet", layers=tf.keras.layers)(inputs)
+model = tf.keras.applications.MobileNetV2(input_shape=input_shape, include_top=False, weights="imagenet")(inputs)
 pool = tf.keras.layers.GlobalAveragePooling2D()(model)
 dropout = tf.keras.layers.Dropout(0.5)(pool)
 embeddings = tf.keras.layers.Dense(units = embedding_size)(dropout)
@@ -30,7 +30,7 @@ output_tensor = SoftTripleLoss(num_class, num_centers, embedding_size)(base_netw
 
 # define the model and compile it
 model = tf.keras.Model(inputs=[inputs, input_label], outputs=output_tensor)
-model.compile(optimizer="adam")
+model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001))
 
 train_data = {
     "images" : normalize_images(train_images),
@@ -43,8 +43,7 @@ validation_data = {
 }
 
 # create simple callback for projecting embeddings after every epoch
-# todo: this is currently not working: tf.keras.callbacks.TensorBoard(log_dir="tb")
-
+# todo: this is currently not working with tf.keras.callbacks.TensorBoard(log_dir="tb")
 projector = TBProjectorCallback(
     base_network,
     "tb",
@@ -61,7 +60,8 @@ evaluator = AnnoyEvaluatorCallback(
     {"images": validation_data["images"][:5000], "labels": np.squeeze(validation_data["labels"][:5000])},
     {"images": validation_data["images"][5000:], "labels": np.squeeze(validation_data["labels"][5000:])},
     normalize_eb=True,
-    emb_size=embedding_size
+    emb_size=embedding_size,
+    progress=False
 )
 
 model.fit(

@@ -95,9 +95,10 @@ projector = TBProjectorCallback(
 
 #### Examples
 
-* Simple SoftTriple Training on CIFAR 10 with embeddings projector (**[LINK](examples/cifar10.py)**)
-* ProxyAnchor Loss on Cars196, using tf.data.Dataset and projector  (**[LINK](examples/cars196.py)**)
+* SoftTriple Training on CIFAR 10 with projector and evaluator (**[LINK](examples/cifar10.py)**)
+* ProxyAnchor Loss on Cars196, using tf.data.Dataset (**[LINK](examples/cars196.py)**)
 * NPair Loss with MaximumLossMiner [TODO]
-* TripletTraining [TODO]
+* TripletTraining with Mining [TODO]
 * ContrastiveLoss on MNIST [TODO]
 * Simple Classification on Cars196 with Projector Visualization and Evaluator [TODO]
+* Todo discriminative layer optimizer [TODO](https://github.com/tensorflow/addons/pull/969)
