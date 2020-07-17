@@ -5,7 +5,7 @@ from tensorflow.keras import backend as K
 
 
 class TripletLoss(tf.keras.layers.Layer):
-    def __init__(self, margin=1.0, normalize=False, **kwargs):
+    def __init__(self, margin=0.5, normalize=True, **kwargs):
         super(TripletLoss, self).__init__(**kwargs)
 
         self.margin = margin
@@ -20,14 +20,18 @@ class TripletLoss(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
     def loss_fn(self, embeddings_a, embeddings_p, embeddings_n):
-        anch_pos = self.euclidean_distance(embeddings_a, embeddings_p)
-        anch_neg = self.euclidean_distance(embeddings_a, embeddings_n)
-        pos_neg = self.euclidean_distance(embeddings_p, embeddings_n)
+        distance_pos = self.euclidean_distance(embeddings_a, embeddings_p)
+        distance_neg = self.euclidean_distance(embeddings_a, embeddings_n)
+        triplet_loss = tf.maximum(0.0, self.margin + distance_pos - distance_neg)
+        total_loss = tf.reduce_mean(triplet_loss)
+        return total_loss
 
-        return K.mean(K.maximum(K.constant(0), K.square(anch_pos) - 0.5*(K.square(anch_neg)+K.square(pos_neg)) + self.margin))
-
-    def euclidean_distance(self, x, y):
-        return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
+    def euclidean_distance(self, a, b):
+        if self.normalize:
+            # use this when using l2 norm vectors
+            return tf.maximum(0.0, tf.reduce_sum(tf.square(tf.subtract(a, b)), 1))
+        # otherwise use uclidean distance
+        return tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(a, b)), 1) + tf.keras.backend.epsilon()), 0.0)
 
     def call(self, embeddings_a, embeddings_p, embeddings_n):
         if self.normalize:

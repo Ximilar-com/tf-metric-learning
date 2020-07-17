@@ -49,7 +49,7 @@ model.fit(data, None, epochs=10, batch_size=10)
 #### Miners
 
 * MaximumLossMiner [TODO]
-* HardTripletMiner [TODO]
+* TripletAnnoyMiner ✅
 
 #### Evaluators
 
@@ -98,7 +98,10 @@ projector = TBProjectorCallback(
 * SoftTriple Training on CIFAR 10 with projector and evaluator (**[LINK](examples/cifar10.py)**)
 * ProxyAnchor Loss on Cars196, using tf.data.Dataset (**[LINK](examples/cars196.py)**)
 * NPair Loss with MaximumLossMiner [TODO]
-* TripletTraining with Mining [TODO]
+* TripletTraining with Mining (**[LINK](examples/triplet.py)**)
 * ContrastiveLoss on MNIST [TODO]
-* Simple Classification on Cars196 with Projector Visualization and Evaluator [TODO]
-* Todo discriminative layer optimizer [TODO](https://github.com/tensorflow/addons/pull/969)
+* Simple Classification on Cars196 with Projector Visualization and Evaluator  (**[LINK](examples/cars196_class.py)**)
+
+#### Other todos
+
+* Todo discriminative layer optimizer for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)

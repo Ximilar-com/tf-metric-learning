@@ -60,7 +60,7 @@ evaluator = AnnoyEvaluatorCallback(
     {"images": validation_data["images"][:5000], "labels": np.squeeze(validation_data["labels"][:5000])},
     {"images": validation_data["images"][5000:], "labels": np.squeeze(validation_data["labels"][5000:])},
     normalize_eb=True,
-    emb_size=embedding_size,
+    eb_size=embedding_size,
     progress=False
 )
 

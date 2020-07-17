@@ -42,23 +42,21 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
         self.normalize_fn = normalize_fn
 
     def on_epoch_end(self, epoch, logs=None):
-        if (epoch + 1) % self.freq != 0:
-            return
+        if self.freq and epoch % self.freq == 0:
+            os.makedirs(self.log_dir, exist_ok=True)
+            self.save_labels_tsv(self.data_labels)
+            self.create_sprite(self.data_images)
+            self.register_embedding()
 
-        os.makedirs(self.log_dir, exist_ok=True)
-        self.save_labels_tsv(self.data_labels)
-        self.create_sprite(self.data_images)
-        self.register_embedding()
+            data = self.normalize_fn(self.data_images) if self.normalize_fn is not None else self.data_images
+            embeddings = self.base_model.predict(data, batch_size=self.batch_size)
 
-        data = self.normalize_fn(self.data_images) if self.normalize_fn is not None else self.data_images
-        embeddings = self.base_model.predict(data, batch_size=self.batch_size)
+            if self.normalize_eb:
+                embeddings = tf.nn.l2_normalize(embeddings, axis=1)
 
-        if self.normalize_eb:
-            embeddings = tf.nn.l2_normalize(embeddings, axis=1)
-
-        tensor_embeddings = tf.Variable(embeddings, name=EMBEDDINGS)
-        saver = tf.compat.v1.train.Saver([tensor_embeddings])
-        saver.save(sess=None, global_step=epoch, save_path=os.path.join(self.log_dir, EMBEDDINGS + ".ckpt"))
+            tensor_embeddings = tf.Variable(embeddings, name=EMBEDDINGS)
+            saver = tf.compat.v1.train.Saver([tensor_embeddings])
+            saver.save(sess=None, global_step=epoch, save_path=os.path.join(self.log_dir, EMBEDDINGS + ".ckpt"))
 
     def save_labels_tsv(self, labels):
         if os.path.exists(os.path.join(self.log_dir, METAFILE)):

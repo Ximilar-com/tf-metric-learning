@@ -22,7 +22,7 @@ def load_img_train(image, label):
     image = tf.image.random_flip_left_right(image)
     image = tf.image.random_hue(image, 0.1)
     image = tf.image.random_brightness(image, max_delta=0.1)
-    return {"images": image, "labels": label}, label
+    return image, label
 
 def filter_train(image, label):
     return label < 98
@@ -32,7 +32,7 @@ def load_img_test(image, label):
     """Normalizes images: `uint8` -> `float32`."""
     image = tf.image.convert_image_dtype(image, tf.float32)
     image = tf.image.resize(image, [IMG_SIZE , IMG_SIZE])
-    return {"images": image, "labels": label}, label
+    return image, label
 
 def filter_test(image, label):
     return label >= 98
@@ -42,10 +42,10 @@ def normalize_images(images):
 
 def scheduler(epoch):
     if epoch < 20:
-        return 0.0001
+        return 0.001
     elif epoch < 40:
-        return 0.00001
-    return 0.000001
+        return 0.0001
+    return 0.00001
 
 (ds_train, ds_test), ds_info = tfds.load(
     'cars196',
@@ -62,14 +62,14 @@ ds_to_test = ds_test.concatenate(ds_train).filter(filter_test)
 ds_to_train = ds_to_train.map(
     load_img_train, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 ds_to_train = ds_to_train.shuffle(3000)
-ds_to_train = ds_to_train.batch(BATCH_SIZE)
+ds_to_train = ds_to_train.batch(BATCH_SIZE).prefetch(10)
 
 ds_to_test = ds_to_test.map(load_img_test, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
 test_images, test_labels = [], []
-for data , label in tfds.as_numpy(ds_to_test):
+for image , label in tfds.as_numpy(ds_to_test):
     # for projector we need to convert the image from 0-1 back to 0-255
-    image = np.squeeze(copy.deepcopy(data["images"]))*255.0
+    image = np.squeeze(copy.deepcopy(image))*255.0
     test_images.append(image)
     test_labels.append(label)
 
@@ -78,7 +78,7 @@ test_labels = np.squeeze(test_labels)
 
 ds_to_test = ds_to_test.shuffle(len(test_images)).cache().batch(BATCH_SIZE)
 
-embedding_size, num_class, num_centers = 64, int(196/2), 10
+embedding_size, num_class, num_centers = 256, int(196/2), 10
 input_shape = (IMG_SIZE, IMG_SIZE, 3)
 
 # define base network for embeddings
@@ -89,17 +89,18 @@ dropout = tf.keras.layers.Dropout(0.5)(pool)
 embeddings = tf.keras.layers.Dense(units = embedding_size)(dropout)
 base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 
-# define the input and output tensors
-input_label = tf.keras.layers.Input(shape=(1,), name="labels")
-output_tensor = ProxyAnchorLoss(num_class, embedding_size)(base_network.outputs[0], input_label)
+# classification model
+dropout_2 = tf.keras.layers.Dropout(0.25)(embeddings)
+activated = tf.keras.layers.Activation("relu")(dropout_2)
+output_tensor = tf.keras.layers.Dense(num_class, activation="softmax", name="probs", kernel_initializer="he_uniform")(activated)
 
 # define the model and compile it
-model = tf.keras.Model(inputs=[inputs, input_label], outputs=output_tensor)
+model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
 model.summary()
 
 scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
-model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
-
+loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+model.compile(loss=loss, optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)), metrics=["sparse_categorical_accuracy"])
 
 # create simple callback for projecting embeddings after every epoch
 projector = TBProjectorCallback(
@@ -117,7 +118,7 @@ projector = TBProjectorCallback(
 divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
-    "annoy",
+    None,
     {"images": test_images[:divide], "labels": test_labels[:divide]},
     {"images": test_images[divide:], "labels": test_labels[divide:]},
     normalize_fn=normalize_images,
