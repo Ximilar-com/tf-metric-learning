@@ -24,21 +24,12 @@ def load_img_train(image, label):
     image = tf.image.random_brightness(image, max_delta=0.1)
     return {"images": image, "labels": label}, label
 
-def filter_train(image, label):
-    return label < 98
-
 @tf.function
 def load_img_test(image, label):
     """Normalizes images: `uint8` -> `float32`."""
     image = tf.image.convert_image_dtype(image, tf.float32)
     image = tf.image.resize(image, [IMG_SIZE , IMG_SIZE])
     return {"images": image, "labels": label}, label
-
-def filter_test(image, label):
-    return label >= 98
-
-def normalize_images(images):
-    return images / 255.0
 
 def scheduler(epoch):
     if epoch < 20:
@@ -56,8 +47,8 @@ def scheduler(epoch):
 )
 
 # filter the train and test set by the classes
-ds_to_train = ds_train.concatenate(ds_test).filter(filter_train)
-ds_to_test = ds_test.concatenate(ds_train).filter(filter_test)
+ds_to_train = ds_train.concatenate(ds_test).filter(lambda image, label: label < 98)
+ds_to_test = ds_test.concatenate(ds_train).filter(lambda image, label: label >= 98)
 
 ds_to_train = ds_to_train.map(
     load_img_train, num_parallel_calls=tf.data.experimental.AUTOTUNE)
@@ -109,7 +100,7 @@ projector = TBProjectorCallback(
     test_labels,
     batch_size=BATCH_SIZE,
     image_size=64,
-    normalize_fn=normalize_images,
+    normalize_fn=lambda images: images / 255.0,
     normalize_eb=True,
 )
 
@@ -120,7 +111,7 @@ evaluator = AnnoyEvaluatorCallback(
     "annoy",
     {"images": test_images[:divide], "labels": test_labels[:divide]},
     {"images": test_images[divide:], "labels": test_labels[divide:]},
-    normalize_fn=normalize_images,
+    normalize_fn=lambda images: images / 255.0,
     normalize_eb=True,
     eb_size=embedding_size,
     freq=5,

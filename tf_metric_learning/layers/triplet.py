@@ -1,11 +1,9 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
 
-from tensorflow.keras import backend as K
-
 
 class TripletLoss(tf.keras.layers.Layer):
-    def __init__(self, margin=0.5, normalize=True, **kwargs):
+    def __init__(self, margin=0.2, normalize=False, **kwargs):
         super(TripletLoss, self).__init__(**kwargs)
 
         self.margin = margin
@@ -23,15 +21,11 @@ class TripletLoss(tf.keras.layers.Layer):
         distance_pos = self.euclidean_distance(embeddings_a, embeddings_p)
         distance_neg = self.euclidean_distance(embeddings_a, embeddings_n)
         triplet_loss = tf.maximum(0.0, self.margin + distance_pos - distance_neg)
-        total_loss = tf.reduce_mean(triplet_loss)
-        return total_loss
+        total_loss = tf.reduce_sum(triplet_loss)
+        return total_loss, distance_pos, distance_neg
 
     def euclidean_distance(self, a, b):
-        if self.normalize:
-            # use this when using l2 norm vectors
-            return tf.maximum(0.0, tf.reduce_sum(tf.square(tf.subtract(a, b)), 1))
-        # otherwise use uclidean distance
-        return tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(a, b)), 1) + tf.keras.backend.epsilon()), 0.0)
+        return tf.maximum(0.0, tf.reduce_sum(tf.square(tf.subtract(a, b)), 1))
 
     def call(self, embeddings_a, embeddings_p, embeddings_n):
         if self.normalize:
@@ -39,7 +33,9 @@ class TripletLoss(tf.keras.layers.Layer):
             embeddings_p = tf.nn.l2_normalize(embeddings_p, axis=1)
             embeddings_n = tf.nn.l2_normalize(embeddings_n, axis=1)
 
-        loss = self.loss_fn(embeddings_a, embeddings_p, embeddings_n)
+        loss, distance_pos, distance_neg = self.loss_fn(embeddings_a, embeddings_p, embeddings_n)
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
+        self.add_metric(distance_pos, name="distance_pos", aggregation="mean")
+        self.add_metric(distance_neg, name="distance_neg", aggregation="mean")
         return embeddings_a, embeddings_p, embeddings_n

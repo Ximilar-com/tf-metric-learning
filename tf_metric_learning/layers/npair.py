@@ -3,6 +3,13 @@ import tensorflow_addons as tfa
 
 
 class NPairLoss(tf.keras.layers.Layer):
+    """
+    NPairLoss layer using tf.addons.
+    Each pair in the batch must have unique label, that is why the labels
+    are created as tf.range(batch_size). Embeddings extracted for this
+    layer should not be normalized and you should use small reg_lambda to 
+    force the network to learn normalized embeddings.
+    """
     def __init__(self, reg_lambda=0.0, **kwargs):
         super(NPairLoss, self).__init__(**kwargs)
 
@@ -26,13 +33,19 @@ class NPairLoss(tf.keras.layers.Layer):
         l2loss = tf.math.multiply(self.reg_lambda, reg_anchor + reg_positive)
         return l2loss
 
-    def call(self, embeddings_a, embeddings_p, labels):
-        loss = self.loss_fn(embeddings_a, embeddings_p, labels)
+    def euclidean_distance(self, x, y):
+        x = tf.keras.backend.l2_normalize(x,  axis=1)
+        y = tf.keras.backend.l2_normalize(y,  axis=1)
+        return tf.reduce_mean(tf.sqrt(tf.maximum(tf.reduce_sum(tf.square(x - y), axis=1), tf.keras.backend.epsilon())))
 
+    def call(self, embeddings_a, embeddings_p):
+        labels = tf.range(tf.shape(embeddings_a)[0])
+        loss = self.loss_fn(embeddings_a, embeddings_p, labels)
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
 
         if self.reg_lambda:
             self.add_metric(self.l2norm(embeddings_a, embeddings_p), name="l2norm", aggregation="mean")
 
-        return embeddings_a, embeddings_p, labels
+        self.add_metric(self.euclidean_distance(embeddings_a, embeddings_p), name="distance_pos", aggregation="mean")
+        return embeddings_a, embeddings_p

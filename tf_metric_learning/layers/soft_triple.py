@@ -41,7 +41,7 @@ class SoftTripleLoss(tf.keras.layers.Layer):
         rs_large_logits = tf.multiply(rs_large_logits, coeff_large_logits)
         logits = tf.reduce_sum(rs_large_logits, axis=1, keepdims=False)
 
-        gt = tf.reshape(labels, [-1], name="second_reshape") # e.g., [0, 7, 3, 22, 39, ...]
+        gt = tf.reshape(labels, [-1], name="second_reshape") # [[0], [7], [3], [22], [39], ...] -> [0, 7, 3, 22, 39, ...]
         gt_int = tf.cast(gt, tf.int32)
         labels_map = tf.one_hot(gt_int, depth=self.num_class, dtype=tf.float32)
 

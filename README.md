@@ -4,7 +4,7 @@
 
 ## Overview
 
-Minimalistic open-source library for metric learning written in TensorFlow2, Numpy and OpenCV(CV2). This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
+Minimalistic open-source library for metric learning written in [TensorFlow2](https://github.com/tensorflow/tensorflow), TF-Addons, Numpy, OpenCV(CV2) and [Annoy](https://github.com/spotify/annoy). This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
 
 All the loss functions are implemented as tf.keras.layers.Layer.
 
@@ -14,6 +14,10 @@ This library contains code that has been adapted and modified from the following
 * [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning)
 * [geonm](https://github.com/geonm?tab=repositories)
 * [nixingyang](https://github.com/nixingyang/Proxy-Anchor-Loss)
+
+### Instalation
+
+* TODO: Publish on pypi.org
 
 ### Examples
 
@@ -95,13 +99,13 @@ projector = TBProjectorCallback(
 
 #### Examples
 
-* SoftTriple Training on CIFAR 10 with projector and evaluator (**[LINK](examples/cifar10.py)**)
-* ProxyAnchor Loss on Cars196, using tf.data.Dataset (**[LINK](examples/cars196.py)**)
-* NPair Loss with MaximumLossMiner [TODO]
-* TripletTraining with Mining (**[LINK](examples/triplet.py)**)
-* ContrastiveLoss on MNIST [TODO]
-* Simple Classification on Cars196 with Projector Visualization and Evaluator  (**[LINK](examples/cars196_class.py)**)
+* [SoftTriple Training on CIFAR 10 with projector and evaluator](examples/softriple.py)
+* [ProxyAnchor Loss on Cars196, using tf.data.Dataset](examples/proxyanchor.py)
+* [NPair Loss with Mining](examples/npair.py)
+* [TripletTraining with Mining](examples/triplet.py)
+* [Classification on Cars196](examples/classification.py)
 
 #### Other todos
 
-* Todo discriminative layer optimizer for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
+* Todo discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
+* Some Tests 😇

@@ -5,23 +5,31 @@ from tensorflow.keras import backend as K
 
 
 class ContrastiveLoss(tf.keras.layers.Layer):
-    def __init__(self, margin=0.5, normalize=False, **kwargs):
+    def __init__(self, margin=1.0, normalize=True, crossentropy=True, **kwargs):
         super(ContrastiveLoss, self).__init__(**kwargs)
 
         self.normalize = normalize
         self.margin = margin
+        self.crossentropy = crossentropy
 
     def get_config(self):
         config = {
             "normalize": self.normalize,
-            "margin": self.margin
+            "margin": self.margin,
+            "crossentropy": self.crossentropy
         }
         base_config = super(ContrastiveLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     def loss_fn(self, embeddings_1, embeddings_2, y_true):
-        y_pred = self.euclidean_distance(embeddings_1, embeddings_2)
-        return K.mean((1 - y_true) * K.square(y_pred) + y_true * K.square(K.maximum(self.margin - y_pred, 0)))
+        y_pred = tf.linalg.norm(embeddings_1 - embeddings_2, axis=1)
+        if self.crossentropy:
+            loss = tf.keras.losses.binary_crossentropy(
+                y_true, y_pred, from_logits=False, label_smoothing=0
+            )
+        else:
+            loss = tfa.losses.contrastive_loss(y_true, y_pred, margin=self.margin)
+        return tf.reduce_sum(loss)
 
     def euclidean_distance(self, x, y):
         return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
@@ -31,7 +39,16 @@ class ContrastiveLoss(tf.keras.layers.Layer):
             embeddings_1 = tf.nn.l2_normalize(embeddings_1, axis=1)
             embeddings_2 = tf.nn.l2_normalize(embeddings_2, axis=1)
 
+        labels = tf.reshape(labels, [-1])
+        pos_idx = tf.reshape(tf.where(labels >= 0.0), [-1])
+        neg_idx = tf.reshape(tf.where(labels <= 1.0), [-1])
+
+        distance_pos = self.euclidean_distance(tf.gather(embeddings_1, pos_idx), tf.gather(embeddings_2, pos_idx))
+        distance_neg = self.euclidean_distance(tf.gather(embeddings_1, neg_idx), tf.gather(embeddings_2, neg_idx))
+
         loss = self.loss_fn(embeddings_1, embeddings_2, labels)
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
-        return embeddings_a, embeddings_p, embeddings_n
+        self.add_metric(distance_pos, name="distance_pos", aggregation="mean")
+        self.add_metric(distance_neg, name="distance_neg", aggregation="mean")
+        return embeddings_1, embeddings_2, labels

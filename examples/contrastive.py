@@ -4,7 +4,7 @@ import tensorflow_datasets as tfds
 import numpy as np
 import copy
 
-from tf_metric_learning.layers.triplet import TripletLoss
+from tf_metric_learning.layers.contrastive import ContrastiveLoss
 from tf_metric_learning.miners.annoy import TripletAnnoyMiner
 from tf_metric_learning.utils.projector import TBProjectorCallback
 from tf_metric_learning.utils.recall import AnnoyEvaluatorCallback
@@ -16,12 +16,12 @@ BATCH_SIZE = 32
 EPOCHS = 60
 
 
-class AnchorPositiveNegative(BaseMinerSequence):
+class ContrastiveSequence(BaseMinerSequence):
     def __init__(self, base_model, train_images, train_labels, embedding_size, batch_size):
         super().__init__(base_model, train_images, train_labels, embedding_size, batch_size)
 
     def __getitem__(self, idx):
-        anchors, positives, negatives = [], [], []
+        anchors, positives, labels = [], [], []
         base_index = idx * BATCH_SIZE
 
         for i in range(BATCH_SIZE):
@@ -48,9 +48,12 @@ class AnchorPositiveNegative(BaseMinerSequence):
             # add them to the batch
             anchors.append(anchor_image)
             positives.append(positive)
-            negatives.append(negative)
+            labels.append(0.0)
+            anchors.append(anchor_image)
+            positives.append(negative)
+            labels.append(1.0)
 
-        return [np.asarray(anchors), np.asarray(positives), np.asarray(negatives)]
+        return [np.asarray(anchors), np.asarray(positives), np.asarray(labels)]
 
 
 @tf.function
@@ -63,10 +66,10 @@ def load_img(image, label):
 
 def scheduler(epoch):
     if epoch < 20:
-        return 0.0001
+        return 0.001
     elif epoch < 40:
-        return 0.00001
-    return 0.000001
+        return 0.0001
+    return 0.00001
 
 
 (ds_train, ds_test), ds_info = tfds.load(
@@ -118,16 +121,15 @@ embeddings = tf.keras.layers.Dense(units = embedding_size)(dropout)
 base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 
 input_anchor = tf.keras.Input(shape=input_shape, name='input_anchor')
-input_positive = tf.keras.Input(shape=input_shape, name='input_pos')
-input_negative = tf.keras.Input(shape=input_shape, name='input_neg')
+input_second = tf.keras.Input(shape=input_shape, name='input_second')
+input_labels = tf.keras.Input(shape=(1,), name='input_labels')
 
 # this will create three networks with shared weights ...
 net_anchor = base_network(input_anchor)
-net_positive = base_network(input_positive)
-net_negative = base_network(input_negative)
+net_second = base_network(input_second)
 
-loss_layer = TripletLoss(margin=0.2, normalize=True)(net_anchor, net_positive, net_negative)
-triplet_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_negative], outputs = loss_layer)
+loss_layer = ContrastiveLoss(margin=0.5, normalize=True)(net_anchor, net_second, input_labels)
+model = tf.keras.Model(inputs = [input_anchor, input_second, input_labels], outputs = loss_layer)
 
 # create simple callback for projecting embeddings after every epoch
 projector = TBProjectorCallback(
@@ -156,10 +158,10 @@ evaluator = AnnoyEvaluatorCallback(
 
 scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
-triplet_model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
+model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
 
-triplet_model.fit(
-    AnchorPositiveNegative(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
+model.fit(
+    ContrastiveSequence(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
     callbacks=[scheduler_cb, evaluator, projector],
     epochs=EPOCHS
 )

@@ -4,8 +4,7 @@ import tensorflow_datasets as tfds
 import numpy as np
 import copy
 
-from tf_metric_learning.layers.triplet import TripletLoss
-from tf_metric_learning.miners.annoy import TripletAnnoyMiner
+from tf_metric_learning.layers.npair import NPairLoss
 from tf_metric_learning.utils.projector import TBProjectorCallback
 from tf_metric_learning.utils.recall import AnnoyEvaluatorCallback
 
@@ -16,42 +15,56 @@ BATCH_SIZE = 32
 EPOCHS = 60
 
 
-class AnchorPositiveNegative(BaseMinerSequence):
+class AnchorPositive(BaseMinerSequence):
     def __init__(self, base_model, train_images, train_labels, embedding_size, batch_size):
         super().__init__(base_model, train_images, train_labels, embedding_size, batch_size)
 
     def __getitem__(self, idx):
-        anchors, positives, negatives = [], [], []
+        anchors, positives, labels = [], [], []
         base_index = idx * BATCH_SIZE
 
         for i in range(BATCH_SIZE):
             id_image = self.indexes[base_index +i]
             anchor_image, anchor_label = self.train_images[id_image], self.train_labels[id_image]
+            if anchor_label in labels:
+                continue
             anchor_image = self.augment_image(anchor_image).numpy()
 
-            # pick the positive image for anchor in triplet
+            # pick the positive image for anchor to form pair
             positive_id = self.pick_positive(anchor_image, anchor_label, id_image)
             if positive_id is None:
                 continue
             positive, positive_label = self.train_images[positive_id], self.train_labels[positive_id]
             positive = self.augment_image(positive).numpy()
 
+            # add them to the batch
+            labels.append(anchor_label)
+            anchors.append(anchor_image)
+            positives.append(positive)
+
             # pick the negative image for anchor in triplet
             negative_id = self.pick_negative(anchor_image, anchor_label, id_image)
             if negative_id is None:
                 continue
             negative, negative_label = self.train_images[negative_id], self.train_labels[negative_id]
+            if negative_label in labels:
+                continue
             negative = self.augment_image(negative).numpy()
 
-            store_images("test.jpg", anchor_image, positive, negative)
+            # pick the positive image for anchor to form pair
+            positive2_id = self.pick_positive(negative, negative_label, negative_id)
+            if positive2_id is None:
+                continue
+            positive2, positive2_label = self.train_images[positive2_id], self.train_labels[positive2_id]
+            positive2 = self.augment_image(positive2).numpy()
 
-            # add them to the batch
-            anchors.append(anchor_image)
-            positives.append(positive)
-            negatives.append(negative)
+            store_images("test.jpg", anchor_image, positive, negative, positive2)
 
-        return [np.asarray(anchors), np.asarray(positives), np.asarray(negatives)]
+            labels.append(negative_label)
+            anchors.append(negative)
+            positives.append(positive2)
 
+        return [np.asarray(anchors), np.asarray(positives)]
 
 @tf.function
 def load_img(image, label):
@@ -59,14 +72,6 @@ def load_img(image, label):
     image = tf.image.convert_image_dtype(image, tf.float32) # converts to 0-1
     image = tf.image.resize(image, [IMG_SIZE, IMG_SIZE])
     return image, label
-
-
-def scheduler(epoch):
-    if epoch < 20:
-        return 0.0001
-    elif epoch < 40:
-        return 0.00001
-    return 0.000001
 
 
 (ds_train, ds_test), ds_info = tfds.load(
@@ -119,15 +124,13 @@ base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 
 input_anchor = tf.keras.Input(shape=input_shape, name='input_anchor')
 input_positive = tf.keras.Input(shape=input_shape, name='input_pos')
-input_negative = tf.keras.Input(shape=input_shape, name='input_neg')
 
 # this will create three networks with shared weights ...
 net_anchor = base_network(input_anchor)
 net_positive = base_network(input_positive)
-net_negative = base_network(input_negative)
 
-loss_layer = TripletLoss(margin=0.2, normalize=True)(net_anchor, net_positive, net_negative)
-triplet_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_negative], outputs = loss_layer)
+loss_layer = NPairLoss(reg_lambda=0.002)(net_anchor, net_positive)
+npair_model = tf.keras.Model(inputs = [input_anchor, input_positive], outputs = loss_layer)
 
 # create simple callback for projecting embeddings after every epoch
 projector = TBProjectorCallback(
@@ -154,12 +157,10 @@ evaluator = AnnoyEvaluatorCallback(
     freq=1,
 )
 
-scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
+npair_model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001))
 
-triplet_model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
-
-triplet_model.fit(
-    AnchorPositiveNegative(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
-    callbacks=[scheduler_cb, evaluator, projector],
+npair_model.fit(
+    AnchorPositive(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
+    callbacks=[evaluator, projector],
     epochs=EPOCHS
 )
