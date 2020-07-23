@@ -17,10 +17,11 @@ This library contains code that has been adapted and modified from the following
 
 ### TODO
 
-* Publish on pypi.org
+* Easy installation/Publishing on pypi.org
 * Discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
 * Some Tests 😇
-* Improving mining and loss functions
+* Improve API with combination of multiple Loss Functinos
+* Improve and add more minerss
 
 ### Examples
 
@@ -42,7 +43,16 @@ data = {"embeddings" : np.asarray([np.zeros(256) for i in range(1000)]), "labels
 model.fit(data, None, epochs=10, batch_size=10)
 ```
 
-### Implementations
+More complex scenarios:
+
+* [SoftTriple Training on CIFAR 10](examples/softriple.py)
+* [ProxyAnchor Loss on Cars196, using tf.data.Dataset](examples/proxyanchor.py)
+* [NPair Loss with Mining](examples/npair.py)
+* [Triplet Training with Mining](examples/triplet.py)
+* [Contrastive Training on Cars196](examples/contrastive.py)
+* [Classification on Cars196](examples/classification.py)
+
+### Features
 
 #### Loss functions
 
@@ -100,12 +110,3 @@ projector = TBProjectorCallback(
     normalize_fn=normalize_images
 )
 ```
-
-#### Examples
-
-* [SoftTriple Training on CIFAR 10](examples/softriple.py)
-* [ProxyAnchor Loss on Cars196, using tf.data.Dataset](examples/proxyanchor.py)
-* [NPair Loss with Mining](examples/npair.py)
-* [Triplet Training with Mining](examples/triplet.py)
-* [Contrastive Training on Cars196](examples/contrastive.py)
-* [Classification on Cars196](examples/classification.py)
