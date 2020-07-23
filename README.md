@@ -15,9 +15,12 @@ This library contains code that has been adapted and modified from the following
 * [geonm](https://github.com/geonm?tab=repositories)
 * [nixingyang](https://github.com/nixingyang/Proxy-Anchor-Loss)
 
-### Instalation
+### TODO
 
-* TODO: Publish on pypi.org
+* Publish on pypi.org
+* Discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
+* Some Tests 😇
+* Improving mining and loss functions
 
 ### Examples
 
@@ -106,8 +109,3 @@ projector = TBProjectorCallback(
 * [Triplet Training with Mining](examples/triplet.py)
 * [Contrastive Training on Cars196](examples/contrastive.py)
 * [Classification on Cars196](examples/classification.py)
-
-#### Other todos
-
-* Todo discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
-* Some Tests 😇
