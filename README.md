@@ -6,7 +6,11 @@
 
 Minimalistic open-source library for metric learning written in [TensorFlow2](https://github.com/tensorflow/tensorflow), TF-Addons, Numpy, OpenCV(CV2) and [Annoy](https://github.com/spotify/annoy). This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
 
-All the loss functions are implemented as tf.keras.layers.Layer.
+### Features
+
+* All the loss functions are implemented as tf.keras.layers.Layer
+* Callbacks for Computing Recall, Visualize Embeddings in TensorBoard Projector
+* Simple Mining mechanism with Annoy
 
 #### Open-source repos
 This library contains code that has been adapted and modified from the following great open-source repos, without them this will be not possible (THANK YOU):
