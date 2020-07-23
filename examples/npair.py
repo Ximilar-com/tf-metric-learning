@@ -133,9 +133,11 @@ loss_layer = NPairLoss(reg_lambda=0.002)(net_anchor, net_positive)
 npair_model = tf.keras.Model(inputs = [input_anchor, input_positive], outputs = loss_layer)
 
 # create simple callback for projecting embeddings after every epoch
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
+
 projector = TBProjectorCallback(
     base_network,
-    "tb",
+    "tb/projector",
     test_images,
     test_labels,
     batch_size=BATCH_SIZE,
@@ -145,7 +147,7 @@ projector = TBProjectorCallback(
     freq=1,
 )
 
-# callback for recall evaluation
+# callbacks for recall evaluation
 divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
@@ -161,6 +163,6 @@ npair_model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001))
 
 npair_model.fit(
     AnchorPositive(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
-    callbacks=[evaluator, projector],
+    callbacks=[tensorboard, evaluator, projector],
     epochs=EPOCHS
 )

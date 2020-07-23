@@ -42,21 +42,23 @@ validation_data = {
     "labels": test_labels
 }
 
-# create simple callback for projecting embeddings after every epoch
-# todo: this is currently not working with tf.keras.callbacks.TensorBoard(log_dir="tb")
+# callbacks
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
+
 projector = TBProjectorCallback(
     base_network,
-    "tb",
+    "tb/projector",
     copy.deepcopy(test_images),
     np.squeeze(test_labels),
     batch_size=BATCH_SIZE,
+    image_size=32,
     normalize_fn=normalize_images,
-    normalize_eb=True
+    normalize_eb=True,
+    freq=1,
 )
 
 evaluator = AnnoyEvaluatorCallback(
     base_network,
-    "annoy",
     {"images": validation_data["images"][:5000], "labels": np.squeeze(validation_data["labels"][:5000])},
     {"images": validation_data["images"][5000:], "labels": np.squeeze(validation_data["labels"][5000:])},
     normalize_eb=True,
@@ -68,7 +70,7 @@ model.fit(
     train_data,
     train_labels,
     validation_data=(validation_data, test_labels),
-    callbacks=[evaluator, projector],
+    callbacks=[tensorboard, evaluator, projector],
     shuffle=True,
     epochs=20,
     batch_size=BATCH_SIZE

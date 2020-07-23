@@ -16,7 +16,11 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
     """
     def __init__(self, model, log_dir, data_images, data_labels, show_images=True, image_size=32, freq=1, batch_size=None, normalize_eb=True, normalize_fn=None, **kwargs):
         """
-        Initialize callback.
+        Initialize callback for visuallizing embeddings into tensorflow projector.
+
+        ! Currently due to some bugs in tensorboard, you need to specify different log_dir as your
+        ! dir for tf.keras.callbacks.TensorBoard
+
         :param model: base model, should output embeddings
         :param log_dir: path to the tensorboard directory
         :param data_images: list of images
@@ -55,6 +59,11 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
                 embeddings = tf.nn.l2_normalize(embeddings, axis=1)
 
             tensor_embeddings = tf.Variable(embeddings, name=EMBEDDINGS)
+
+            # this is not working right now https://github.com/tensorflow/tensorboard/issues/2471
+            # checkpoint = tf.train.Checkpoint(embedding=tensor_embeddings)
+            # checkpoint.save(os.path.join(self.log_dir, EMBEDDINGS + ".ckpt"))
+
             saver = tf.compat.v1.train.Saver([tensor_embeddings])
             saver.save(sess=None, global_step=epoch, save_path=os.path.join(self.log_dir, EMBEDDINGS + ".ckpt"))
 

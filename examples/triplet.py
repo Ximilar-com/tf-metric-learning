@@ -106,7 +106,7 @@ test_labels = np.squeeze(test_labels)
 
 ds_to_test = ds_to_test.shuffle(len(test_images)).cache().batch(BATCH_SIZE)
 
-embedding_size, num_class, num_centers = 128, int(196/2), 10
+embedding_size, num_class, num_centers = 64, int(196/2), 10
 input_shape = (IMG_SIZE, IMG_SIZE, 3)
 
 # define base network for embeddings
@@ -129,14 +129,16 @@ net_negative = base_network(input_negative)
 loss_layer = TripletLoss(margin=0.2, normalize=True)(net_anchor, net_positive, net_negative)
 triplet_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_negative], outputs = loss_layer)
 
-# create simple callback for projecting embeddings after every epoch
+# callbacks
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
+
 projector = TBProjectorCallback(
     base_network,
-    "tb",
-    test_images,
-    test_labels,
+    "tb/projector",
+    test_images[:2500],
+    test_labels[:2500],
     batch_size=BATCH_SIZE,
-    image_size=64,
+    image_size=32,
     normalize_fn=lambda images: images / 255.0,
     normalize_eb=True,
     freq=1,
@@ -160,6 +162,6 @@ triplet_model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
 
 triplet_model.fit(
     AnchorPositiveNegative(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
-    callbacks=[scheduler_cb, evaluator, projector],
+    callbacks=[tensorboard, scheduler_cb, evaluator, projector],
     epochs=EPOCHS
 )

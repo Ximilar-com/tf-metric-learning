@@ -86,13 +86,12 @@ inputs = tf.keras.Input(shape=input_shape, name="images")
 model = tf.keras.applications.MobileNetV2(input_shape=input_shape, include_top=False, weights="imagenet")(inputs)
 pool = tf.keras.layers.GlobalAveragePooling2D()(model)
 dropout = tf.keras.layers.Dropout(0.5)(pool)
-embeddings = tf.keras.layers.Dense(units = embedding_size)(dropout)
+embeddings = tf.keras.layers.Dense(units = embedding_size, activation="relu")(dropout)
 base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 
 # classification model
 dropout_2 = tf.keras.layers.Dropout(0.25)(embeddings)
-activated = tf.keras.layers.Activation("relu")(dropout_2)
-output_tensor = tf.keras.layers.Dense(num_class, activation="softmax", name="probs", kernel_initializer="he_uniform")(activated)
+output_tensor = tf.keras.layers.Dense(num_class, activation="softmax", name="probs", kernel_initializer="he_uniform")(dropout_2)
 
 # define the model and compile it
 model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
@@ -102,10 +101,12 @@ scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
 loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 model.compile(loss=loss, optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)), metrics=["sparse_categorical_accuracy"])
 
-# create simple callback for projecting embeddings after every epoch
+# callbacks
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
+
 projector = TBProjectorCallback(
     base_network,
-    "tb",
+    "tb/projector",
     test_images,
     test_labels,
     batch_size=BATCH_SIZE,
@@ -118,7 +119,6 @@ projector = TBProjectorCallback(
 divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
-    None,
     {"images": test_images[:divide], "labels": test_labels[:divide]},
     {"images": test_images[divide:], "labels": test_labels[divide:]},
     normalize_fn=normalize_images,
@@ -129,6 +129,6 @@ evaluator = AnnoyEvaluatorCallback(
 
 model.fit(
     ds_to_train,
-    callbacks=[evaluator, scheduler_cb, projector],
+    callbacks=[tensorboard, evaluator, scheduler_cb, projector],
     epochs=EPOCHS
 )

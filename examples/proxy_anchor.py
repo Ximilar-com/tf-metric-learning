@@ -91,11 +91,12 @@ model.summary()
 scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
 
+# callbacks
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
 
-# create simple callback for projecting embeddings after every epoch
 projector = TBProjectorCallback(
     base_network,
-    "tb",
+    "tb/projector",
     test_images,
     test_labels,
     batch_size=BATCH_SIZE,
@@ -108,7 +109,6 @@ projector = TBProjectorCallback(
 divide = int(len(test_images) / 2)
 evaluator = AnnoyEvaluatorCallback(
     base_network,
-    "annoy",
     {"images": test_images[:divide], "labels": test_labels[:divide]},
     {"images": test_images[divide:], "labels": test_labels[divide:]},
     normalize_fn=lambda images: images / 255.0,
@@ -119,6 +119,6 @@ evaluator = AnnoyEvaluatorCallback(
 
 model.fit(
     ds_to_train,
-    callbacks=[evaluator, scheduler_cb, projector],
+    callbacks=[tensorboard, evaluator, scheduler_cb, projector],
     epochs=EPOCHS
 )

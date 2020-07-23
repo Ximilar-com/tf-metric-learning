@@ -43,7 +43,7 @@ model.fit(data, None, epochs=10, batch_size=10)
 
 #### Loss functions
 
-* [MultiSimilarityLoss](https://arxiv.org/abs/1904.06627) [TODO]
+* [MultiSimilarityLoss](https://arxiv.org/abs/1904.06627) ✅
 * [ProxyAnchorLoss](https://arxiv.org/abs/2003.13911) ✅
 * [SoftTripleLoss](https://arxiv.org/abs/1909.05235) ✅
 * [NPairLoss](http://www.nec-labs.com/uploads/images/Department-Images/MediaAnalytics/papers/nips16_npairmetriclearning.pdf) ✅
@@ -64,12 +64,13 @@ import tensorflow as tf
 from tf_metric_learning.utils.recall import AnnoyEvaluatorCallback
 
 evaluator = AnnoyEvaluatorCallback(
-    base_model,
-    "log_dir",
-    {"images": [...], "labels": [...]}, # images to store in index
-    {"images": [...], "labels": [...]}, # images to query
-    emb_size=256,
-    metric="euclidean"
+    base_network,
+    {"images": test_images[:divide], "labels": test_labels[:divide]}, # images stored to index
+    {"images": test_images[divide:], "labels": test_labels[divide:]}, # images to query
+    normalize_fn=lambda images: images / 255.0,
+    normalize_eb=True,
+    eb_size=embedding_size,
+    freq=1,
 )
 ```
 
@@ -89,7 +90,7 @@ def normalize_images(images):
 
 projector = TBProjectorCallback(
     base_model,
-    "log_dir",
+    "tb/projector",
     test_images, # list of images
     np.squeeze(test_labels),
     normalize_eb=True,
@@ -99,10 +100,11 @@ projector = TBProjectorCallback(
 
 #### Examples
 
-* [SoftTriple Training on CIFAR 10 with projector and evaluator](examples/softriple.py)
+* [SoftTriple Training on CIFAR 10](examples/softriple.py)
 * [ProxyAnchor Loss on Cars196, using tf.data.Dataset](examples/proxyanchor.py)
 * [NPair Loss with Mining](examples/npair.py)
-* [TripletTraining with Mining](examples/triplet.py)
+* [Triplet Training with Mining](examples/triplet.py)
+* [Contrastive Training on Cars196](examples/contrastive.py)
 * [Classification on Cars196](examples/classification.py)
 
 #### Other todos

@@ -48,10 +48,10 @@ class ContrastiveSequence(BaseMinerSequence):
             # add them to the batch
             anchors.append(anchor_image)
             positives.append(positive)
-            labels.append(0.0)
+            labels.append(1.0)
             anchors.append(anchor_image)
             positives.append(negative)
-            labels.append(1.0)
+            labels.append(0.0)
 
         return [np.asarray(anchors), np.asarray(positives), np.asarray(labels)]
 
@@ -66,10 +66,10 @@ def load_img(image, label):
 
 def scheduler(epoch):
     if epoch < 20:
-        return 0.001
-    elif epoch < 40:
         return 0.0001
-    return 0.00001
+    elif epoch < 40:
+        return 0.00001
+    return 0.000001
 
 
 (ds_train, ds_test), ds_info = tfds.load(
@@ -128,13 +128,15 @@ input_labels = tf.keras.Input(shape=(1,), name='input_labels')
 net_anchor = base_network(input_anchor)
 net_second = base_network(input_second)
 
-loss_layer = ContrastiveLoss(margin=0.5, normalize=True)(net_anchor, net_second, input_labels)
+loss_layer = ContrastiveLoss(margin=1.0, normalize=True)(net_anchor, net_second, input_labels)
 model = tf.keras.Model(inputs = [input_anchor, input_second, input_labels], outputs = loss_layer)
 
 # create simple callback for projecting embeddings after every epoch
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
+
 projector = TBProjectorCallback(
     base_network,
-    "tb",
+    "tb/projector",
     test_images,
     test_labels,
     batch_size=BATCH_SIZE,
@@ -162,6 +164,6 @@ model.compile(optimizer=tf.keras.optimizers.Adam(lr=scheduler(0)))
 
 model.fit(
     ContrastiveSequence(base_network, train_images, train_labels, embedding_size, BATCH_SIZE),
-    callbacks=[scheduler_cb, evaluator, projector],
+    callbacks=[tensorboard, scheduler_cb, evaluator, projector],
     epochs=EPOCHS
 )
