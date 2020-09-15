@@ -5,27 +5,29 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
     """
     The original implementation was taken from: https://github.com/geonm/tf_ms_loss
     """
-    def __init__(self, alpha=2.0, beta=50.0, lamb=1.0, eps=0.1, **kwargs):
+    def __init__(self, alpha=2.0, beta=50.0, lamb=1.0, eps=0.1, weight=1.0, **kwargs):
         super(MultiSimilarityLoss, self).__init__(**kwargs)
 
         self.alpha = alpha
         self.beta = beta
         self.lamb = lamb
         self.eps = eps
+        self.weight = weight
 
     def get_config(self):
         config = {
             "alpha": self.alpha,
             "beta": self.beta,
             "lamb": self.lamb,
-            "eps": self.eps
+            "eps": self.eps,
+            "weight": self.weight
         }
-        base_config = super(ProxyAnchorLoss, self).get_config()
+        base_config = super(MultiSimilarityLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     @tf.function
-    def loss_fn(self, embeddings_1, embeddings_2, y_pred):
-        batch_size = tf.shape(y_pred[:, 0, :])[0]
+    def loss_fn(self, embeddings_1, embeddings_2):
+        batch_size = tf.shape(embeddings_2)[0]
 
         embeddings = tf.concat([embeddings_1, embeddings_2], axis=0)
         embeddings = tf.nn.l2_normalize(embeddings, axis=1)
@@ -58,7 +60,9 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         return loss
 
     def call(self, embeddings_1, embeddings_2, labels):
-        loss = self.loss_fn(embeddings_1, embeddings_2, labels)
+        loss = self.loss_fn(embeddings_1, embeddings_2)
+        loss = loss * self.weight
+
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
-        return embeddings, labels
+        return embeddings_1, embeddings_2, labels

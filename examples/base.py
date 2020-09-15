@@ -48,13 +48,14 @@ class BaseMinerSequence(tf.keras.utils.Sequence):
 
     def pick_positive(self, anchor_image, anchor_label, id):
         """
-        You can reimplement this mechanism
+        Current implementation is picking random positive sample from same class.
+        You can reimplement/override this mechanism.
         """
         return random.choice(self.mapping[anchor_label])
 
     def pick_negative(self, anchor_image, anchor_label, id):
         """
-
+        Pick negative sample.
         """
         if self.epoch < 20:
             # randomly pick easy negative image

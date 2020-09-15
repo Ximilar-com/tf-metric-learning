@@ -2,12 +2,13 @@ import tensorflow as tf
 
 
 class SoftTripleLoss(tf.keras.layers.Layer):
-    def __init__(self, num_class, num_centers, embeddings_size, **kwargs):
+    def __init__(self, num_class, num_centers, embeddings_size, weight=1.0, **kwargs):
         super(SoftTripleLoss, self).__init__(**kwargs)
 
         self.num_class = num_class
         self.num_centers = num_centers
         self.embeddings_size = embeddings_size
+        self.weight = weight
 
     def build(self, input_shape):
         self.large_centers = self.add_weight(
@@ -22,7 +23,8 @@ class SoftTripleLoss(tf.keras.layers.Layer):
         config = {
             "num_class": self.num_class,
             "num_centers": self.num_centers,
-            "embeddings_size": self.embeddings_size
+            "embeddings_size": self.embeddings_size,
+            "weight": self.weight
         }
         base_config = super(SoftTripleLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -76,6 +78,8 @@ class SoftTripleLoss(tf.keras.layers.Layer):
 
     def call(self, embeddings, labels):
         loss = self.loss_fn(embeddings, labels)
+        loss = loss * self.weight
+
         reg_loss = self.regularization()
         self.add_loss(loss+reg_loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
