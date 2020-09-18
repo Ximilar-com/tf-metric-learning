@@ -10,14 +10,16 @@ class NPairLoss(tf.keras.layers.Layer):
     layer should not be normalized and you should use small reg_lambda to 
     force the network to learn normalized embeddings.
     """
-    def __init__(self, reg_lambda=0.0, **kwargs):
+    def __init__(self, reg_lambda=0.0, weight=1.0, **kwargs):
         super(NPairLoss, self).__init__(**kwargs)
 
         self.reg_lambda = reg_lambda
+        self.weight = weight
 
     def get_config(self):
         config = {
             "reg_lambda": self.reg_lambda,
+            "weight": self.weight
         }
         base_config = super(NPairLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -38,9 +40,12 @@ class NPairLoss(tf.keras.layers.Layer):
         y = tf.keras.backend.l2_normalize(y,  axis=1)
         return tf.reduce_mean(tf.sqrt(tf.maximum(tf.reduce_sum(tf.square(x - y), axis=1), tf.keras.backend.epsilon())))
 
-    def call(self, embeddings_a, embeddings_p):
-        labels = tf.range(tf.shape(embeddings_a)[0])
-        loss = self.loss_fn(embeddings_a, embeddings_p, labels)
+    def call(self, embeddings_a, embeddings_p, labels):
+        # as the labels are unique in batch
+        labels_new = tf.range(tf.shape(embeddings_a)[0])
+        loss = self.loss_fn(embeddings_a, embeddings_p, labels_new)
+        loss = loss * self.weight
+
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
 
@@ -48,4 +53,4 @@ class NPairLoss(tf.keras.layers.Layer):
             self.add_metric(self.l2norm(embeddings_a, embeddings_p), name="l2norm", aggregation="mean")
 
         self.add_metric(self.euclidean_distance(embeddings_a, embeddings_p), name="distance_pos", aggregation="mean")
-        return embeddings_a, embeddings_p
+        return embeddings_a, embeddings_p, labels

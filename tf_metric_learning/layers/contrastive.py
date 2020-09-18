@@ -5,18 +5,20 @@ from tensorflow.keras import backend as K
 
 
 class ContrastiveLoss(tf.keras.layers.Layer):
-    def __init__(self, margin=1.0, normalize=True, crossentropy=False, **kwargs):
+    def __init__(self, margin=1.0, normalize=True, crossentropy=False, weight=1.0, **kwargs):
         super(ContrastiveLoss, self).__init__(**kwargs)
 
         self.normalize = normalize
         self.margin = margin
         self.crossentropy = crossentropy
+        self.weight = weight
 
     def get_config(self):
         config = {
             "normalize": self.normalize,
             "margin": self.margin,
-            "crossentropy": self.crossentropy
+            "crossentropy": self.crossentropy,
+            "weight": self.weight
         }
         base_config = super(ContrastiveLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -52,6 +54,8 @@ class ContrastiveLoss(tf.keras.layers.Layer):
         distance_neg = self.euclidean_distance(tf.gather(embeddings_1, neg_idx), tf.gather(embeddings_2, neg_idx))
 
         loss = self.loss_fn(embeddings_1, embeddings_2, labels)
+        loss = loss * self.weight
+
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
         self.add_metric(distance_pos, name="distance_pos", aggregation="mean")

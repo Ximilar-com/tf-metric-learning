@@ -11,6 +11,7 @@
 * All the loss functions are implemented as tf.keras.layers.Layer
 * Callbacks for Computing Recall, Visualize Embeddings in TensorBoard Projector
 * Simple Mining mechanism with Annoy
+* Combine multiple loss functions/layers in one model
 
 #### Open-source repos
 This library contains code that has been adapted and modified from the following great open-source repos, without them this will be not possible (THANK YOU):
@@ -24,7 +25,6 @@ This library contains code that has been adapted and modified from the following
 * Easy installation/Publishing on pypi.org
 * Discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
 * Some Tests 😇
-* Improve API with combination of multiple Loss Functinos
 * Improve and add more minerss
 
 ### Examples
@@ -49,12 +49,12 @@ model.fit(data, None, epochs=10, batch_size=10)
 
 More complex scenarios:
 
+* [Complex example with NPair Loss + Multi Similarity + Classification and Mining](examples/npair.py)
 * [SoftTriple Training on CIFAR 10](examples/softriple.py)
-* [ProxyAnchor Loss on Cars196, using tf.data.Dataset](examples/proxyanchor.py)
-* [NPair Loss with Mining](examples/npair.py)
+* [ProxyAnchor Loss using tf.data.Dataset](examples/proxyanchor.py)
 * [Triplet Training with Mining](examples/triplet.py)
-* [Contrastive Training on Cars196](examples/contrastive.py)
-* [Classification on Cars196](examples/classification.py)
+* [Contrastive Training](examples/contrastive.py)
+* [Classification baseline](examples/classification.py)
 
 ### Features
 

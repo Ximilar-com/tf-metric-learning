@@ -2,13 +2,14 @@ import tensorflow as tf
 
 
 class ProxyAnchorLoss(tf.keras.layers.Layer):
-    def __init__(self, num_class, embeddings_size, margin=0.1, alpha=32.0, **kwargs):
+    def __init__(self, num_class, embeddings_size, margin=0.1, alpha=32.0, weight=1.0, **kwargs):
         super(ProxyAnchorLoss, self).__init__(**kwargs)
 
         self.margin = margin
         self.alpha = alpha
         self.num_class = int(num_class)
         self.embeddings_size = embeddings_size
+        self.weight = weight
 
     def build(self, input_shape):
         self.proxy = self.add_weight(
@@ -24,7 +25,8 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
             "num_class": self.num_class,
             "embeddings_size": self.embeddings_size,
             "margin": self.margin,
-            "alpha": self.alpha
+            "alpha": self.alpha,
+            "weight": self.weight
         }
         base_config = super(ProxyAnchorLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -55,6 +57,8 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
 
     def call(self, embeddings, labels):
         loss = self.loss_fn(embeddings, labels)
+        loss = loss * self.weight
+
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
         return embeddings, labels

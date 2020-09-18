@@ -5,6 +5,9 @@ import numpy as np
 import copy
 
 from tf_metric_learning.layers.npair import NPairLoss
+from tf_metric_learning.layers.classification import ClassificationLoss
+from tf_metric_learning.layers.multisimilarity import MultiSimilarityLoss
+from tf_metric_learning.layers.reshape import PairReshapeLayer
 from tf_metric_learning.utils.projector import TBProjectorCallback
 from tf_metric_learning.utils.recall import AnnoyEvaluatorCallback
 
@@ -13,6 +16,7 @@ from base import store_images, BaseMinerSequence
 IMG_SIZE = 224
 BATCH_SIZE = 32
 EPOCHS = 60
+CLASSES = 196/2
 
 
 class AnchorPositive(BaseMinerSequence):
@@ -64,7 +68,7 @@ class AnchorPositive(BaseMinerSequence):
             anchors.append(negative)
             positives.append(positive2)
 
-        return [np.asarray(anchors), np.asarray(positives)]
+        return [np.asarray(anchors), np.asarray(positives), np.asarray(labels)]
 
 @tf.function
 def load_img(image, label):
@@ -124,13 +128,20 @@ base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 
 input_anchor = tf.keras.Input(shape=input_shape, name='input_anchor')
 input_positive = tf.keras.Input(shape=input_shape, name='input_pos')
+input_labels = tf.keras.Input(shape=(1,), name='input_labels')
 
 # this will create three networks with shared weights ...
 net_anchor = base_network(input_anchor)
 net_positive = base_network(input_positive)
 
-loss_layer = NPairLoss(reg_lambda=0.002)(net_anchor, net_positive)
-npair_model = tf.keras.Model(inputs = [input_anchor, input_positive], outputs = loss_layer)
+loss_layer_np = NPairLoss(reg_lambda=0.002)(net_anchor, net_positive, input_labels)
+loss_layer_ms = MultiSimilarityLoss(weight=0.5)(*loss_layer_np)
+reshaped = PairReshapeLayer()(*loss_layer_ms) # we need to convert pair to list
+logits = tf.keras.layers.Dense(units=CLASSES, activation="softmax", name="probs")(reshaped[0])
+loss_layer_cl = ClassificationLoss(weight=0.5)(logits, reshaped[1]) 
+
+npair_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_labels], outputs = loss_layer_cl)
+npair_model.summary()
 
 # create simple callback for projecting embeddings after every epoch
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")

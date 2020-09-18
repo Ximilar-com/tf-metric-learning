@@ -21,13 +21,14 @@ class AnchorPositiveNegative(BaseMinerSequence):
         super().__init__(base_model, train_images, train_labels, embedding_size, batch_size)
 
     def __getitem__(self, idx):
-        anchors, positives, negatives = [], [], []
+        anchors, positives, negatives, labels = [], [], [], []
         base_index = idx * BATCH_SIZE
 
         for i in range(BATCH_SIZE):
             id_image = self.indexes[base_index +i]
             anchor_image, anchor_label = self.train_images[id_image], self.train_labels[id_image]
             anchor_image = self.augment_image(anchor_image).numpy()
+            labels.append(anchor_label)
 
             # pick the positive image for anchor in triplet
             positive_id = self.pick_positive(anchor_image, anchor_label, id_image)
@@ -35,6 +36,7 @@ class AnchorPositiveNegative(BaseMinerSequence):
                 continue
             positive, positive_label = self.train_images[positive_id], self.train_labels[positive_id]
             positive = self.augment_image(positive).numpy()
+            labels.append(positive_label)
 
             # pick the negative image for anchor in triplet
             negative_id = self.pick_negative(anchor_image, anchor_label, id_image)
@@ -42,6 +44,7 @@ class AnchorPositiveNegative(BaseMinerSequence):
                 continue
             negative, negative_label = self.train_images[negative_id], self.train_labels[negative_id]
             negative = self.augment_image(negative).numpy()
+            labels.append(negative_label)
 
             store_images("test.jpg", anchor_image, positive, negative)
 
@@ -50,7 +53,7 @@ class AnchorPositiveNegative(BaseMinerSequence):
             positives.append(positive)
             negatives.append(negative)
 
-        return [np.asarray(anchors), np.asarray(positives), np.asarray(negatives)]
+        return [np.asarray(anchors), np.asarray(positives), np.asarray(negatives), np.asarray(labels)]
 
 
 @tf.function
@@ -120,14 +123,15 @@ base_network = tf.keras.Model(inputs = inputs, outputs = embeddings)
 input_anchor = tf.keras.Input(shape=input_shape, name='input_anchor')
 input_positive = tf.keras.Input(shape=input_shape, name='input_pos')
 input_negative = tf.keras.Input(shape=input_shape, name='input_neg')
+input_labels = tf.keras.Input(shape=(1,), name='input_labels')
 
 # this will create three networks with shared weights ...
 net_anchor = base_network(input_anchor)
 net_positive = base_network(input_positive)
 net_negative = base_network(input_negative)
 
-loss_layer = TripletLoss(margin=0.2, normalize=True)(net_anchor, net_positive, net_negative)
-triplet_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_negative], outputs = loss_layer)
+loss_layer = TripletLoss(margin=0.2, normalize=True)(net_anchor, net_positive, net_negative, input_labels)
+triplet_model = tf.keras.Model(inputs = [input_anchor, input_positive, input_negative, input_labels], outputs = loss_layer)
 
 # callbacks
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir="tb")
