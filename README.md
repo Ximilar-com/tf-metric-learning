@@ -6,6 +6,12 @@
 
 **Minimalistic** open-source library for metric learning written in [TensorFlow2](https://github.com/tensorflow/tensorflow), TF-Addons, Numpy, OpenCV(CV2) and [Annoy](https://github.com/spotify/annoy). This repository contains a TensorFlow2+/tf.keras implementation some of the loss functions and miners. This repository was inspired by [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning).
 
+### Installation
+
+    pip install tensorflow
+    pip install annoy
+    pip install tf-metric-learning
+
 ### Features
 
 * All the loss functions are implemented as tf.keras.layers.Layer
@@ -22,7 +28,6 @@ This library contains code that has been adapted and modified from the following
 
 ### TODO
 
-* Easy installation/Publishing on pypi.org
 * Discriminative layer optimizer (different learning rates) for Loss with weights (Proxy, SoftTriple, ...) [TODO](https://github.com/tensorflow/addons/pull/969)
 * Some Tests 😇
 * Improve and add more minerss
