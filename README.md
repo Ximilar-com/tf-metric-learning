@@ -8,8 +8,15 @@
 
 ### Installation
 
+Prerequirements:
+
     pip install tensorflow
+    pip install tensorflow-addons
     pip install annoy
+    pip install opencv-contrib-python
+
+This library:
+
     pip install tf-metric-learning
 
 ### Features
