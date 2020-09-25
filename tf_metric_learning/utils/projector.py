@@ -14,7 +14,21 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
     """
     Callback, extracts embeddings and add them to TensorBoard Projector.
     """
-    def __init__(self, model, log_dir, data_images, data_labels, show_images=True, image_size=32, freq=1, batch_size=None, normalize_eb=True, normalize_fn=None, **kwargs):
+
+    def __init__(
+        self,
+        model,
+        log_dir,
+        data_images,
+        data_labels,
+        show_images=True,
+        image_size=32,
+        freq=1,
+        batch_size=None,
+        normalize_eb=True,
+        normalize_fn=None,
+        **kwargs
+    ):
         """
         Initialize callback for visuallizing embeddings into tensorflow projector.
 
@@ -71,9 +85,9 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
         if os.path.exists(os.path.join(self.log_dir, METAFILE)):
             return
 
-        with open(os.path.join(self.log_dir, METAFILE), 'w') as f:
+        with open(os.path.join(self.log_dir, METAFILE), "w") as f:
             for label in labels:
-                f.write('{}\n'.format(str(label)))
+                f.write("{}\n".format(str(label)))
 
     def create_sprite(self, images):
         if os.path.exists(os.path.join(self.log_dir, SPRITESFILE)) or not self.show_images:
@@ -83,12 +97,12 @@ class TBProjectorCallback(tf.keras.callbacks.Callback):
 
         # for black & white or greyscale images
         if len(data.shape) == 3:
-            data = np.tile(data[...,np.newaxis], (1,1,1,3))
+            data = np.tile(data[..., np.newaxis], (1, 1, 1, 3))
 
         n = int(np.ceil(np.sqrt(data.shape[0])))
         padding = ((0, n ** 2 - data.shape[0]), (0, 0), (0, 0), (0, 0))
-        data = np.pad(data, padding, mode='constant', constant_values=0)
-        
+        data = np.pad(data, padding, mode="constant", constant_values=0)
+
         # tile images into sprite
         data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3, 4))
         sprite = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])

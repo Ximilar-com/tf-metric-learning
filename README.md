@@ -37,18 +37,20 @@ This library contains code that has been adapted and modified from the following
 ```python
 import tensorflow as tf
 import numpy as np
+
 from tf_metric_learning.layers import SoftTripleLoss
+from tf_metric_learning.utils.constants import EMBEDDINGS, LABELS
 
 num_class, num_centers, embedding_size = 10, 2, 256
 
-inputs = tf.keras.Input(shape=(embedding_size), name="embeddings")
-input_label = tf.keras.layers.Input(shape=(1,), name="labels")
-output_tensor = SoftTripleLoss(num_class, num_centers, embedding_size)(inputs, input_label)
+inputs = tf.keras.Input(shape=(embedding_size), name=EMBEDDINGS)
+input_label = tf.keras.layers.Input(shape=(1,), name=LABELS)
+output_tensor = SoftTripleLoss(num_class, num_centers, embedding_size)({EMBEDDINGS:inputs, LABELS:input_label})
 
 model = tf.keras.Model(inputs=[inputs, input_label], outputs=output_tensor)
 model.compile(optimizer="adam")
 
-data = {"embeddings" : np.asarray([np.zeros(256) for i in range(1000)]), "labels": np.zeros(1000, dtype=np.float32)}
+data = {EMBEDDINGS : np.asarray([np.zeros(256) for i in range(1000)]), LABELS: np.zeros(1000, dtype=np.float32)}
 model.fit(data, None, epochs=10, batch_size=10)
 ```
 

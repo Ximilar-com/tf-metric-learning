@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+from tf_metric_learning.utils.constants import *
+
 
 class ProxyAnchorLoss(tf.keras.layers.Layer):
     def __init__(self, num_class, embeddings_size, margin=0.1, alpha=32.0, weight=1.0, **kwargs):
@@ -15,9 +17,9 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
         self.proxy = self.add_weight(
             name="proxy",
             shape=[self.num_class, self.embeddings_size],
-            initializer="he_normal", 
+            initializer="he_normal",
             trainable=True,
-            dtype=tf.float32
+            dtype=tf.float32,
         )
 
     def get_config(self):
@@ -26,7 +28,7 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
             "embeddings_size": self.embeddings_size,
             "margin": self.margin,
             "alpha": self.alpha,
-            "weight": self.weight
+            "weight": self.weight,
         }
         base_config = super(ProxyAnchorLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -55,10 +57,11 @@ class ProxyAnchorLoss(tf.keras.layers.Layer):
         loss = pos_term + neg_term
         return loss
 
-    def call(self, embeddings, labels):
+    def call(self, inputs):
+        embeddings, labels = inputs[EMBEDDINGS], inputs[LABELS]
         loss = self.loss_fn(embeddings, labels)
         loss = loss * self.weight
 
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
-        return embeddings, labels
+        return inputs

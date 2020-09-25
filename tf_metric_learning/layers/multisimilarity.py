@@ -1,10 +1,13 @@
 import tensorflow as tf
 
+from tf_metric_learning.utils.constants import *
+
 
 class MultiSimilarityLoss(tf.keras.layers.Layer):
     """
     The original implementation was taken from: https://github.com/geonm/tf_ms_loss
     """
+
     def __init__(self, alpha=2.0, beta=50.0, lamb=1.0, eps=0.1, weight=1.0, **kwargs):
         super(MultiSimilarityLoss, self).__init__(**kwargs)
 
@@ -15,13 +18,7 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         self.weight = weight
 
     def get_config(self):
-        config = {
-            "alpha": self.alpha,
-            "beta": self.beta,
-            "lamb": self.lamb,
-            "eps": self.eps,
-            "weight": self.weight
-        }
+        config = {"alpha": self.alpha, "beta": self.beta, "lamb": self.lamb, "eps": self.eps, "weight": self.weight}
         base_config = super(MultiSimilarityLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -38,7 +35,7 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         adjacency = tf.equal(labels, tf.transpose(labels))
         adjacency_not = tf.logical_not(adjacency)
 
-        mask_pos = tf.cast(adjacency, dtype=tf.float32) - tf.eye(batch_size*2, dtype=tf.float32)
+        mask_pos = tf.cast(adjacency, dtype=tf.float32) - tf.eye(batch_size * 2, dtype=tf.float32)
         mask_neg = tf.cast(adjacency_not, dtype=tf.float32)
 
         sim_mat = tf.matmul(embeddings, embeddings, transpose_a=False, transpose_b=True)
@@ -59,10 +56,11 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         loss = tf.reduce_mean(pos_term + neg_term)
         return loss
 
-    def call(self, embeddings_1, embeddings_2, labels):
-        loss = self.loss_fn(embeddings_1, embeddings_2)
+    def call(self, inputs):
+        embeddings_a, embeddings_p = inputs[ANCHOR], inputs[POSITIVE]
+        loss = self.loss_fn(embeddings_a, embeddings_p)
         loss = loss * self.weight
 
         self.add_loss(loss)
         self.add_metric(loss, name=self.name, aggregation="mean")
-        return embeddings_1, embeddings_2, labels
+        return inputs

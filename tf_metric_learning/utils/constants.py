@@ -1,0 +1,7 @@
+ANCHOR = "anchor"
+POSITIVE = "positive"
+NEGATIVE = "negative"
+EMBEDDINGS = "embeddings"
+LABELS = "labels"
+PREDICTION = "pred"
+TARGET = "target"

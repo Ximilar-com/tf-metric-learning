@@ -1,7 +1,8 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
-
 from tensorflow.keras import backend as K
+
+from tf_metric_learning.utils.constants import *
 
 
 class ContrastiveLoss(tf.keras.layers.Layer):
@@ -18,18 +19,16 @@ class ContrastiveLoss(tf.keras.layers.Layer):
             "normalize": self.normalize,
             "margin": self.margin,
             "crossentropy": self.crossentropy,
-            "weight": self.weight
+            "weight": self.weight,
         }
         base_config = super(ContrastiveLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     def loss_fn(self, embeddings_1, embeddings_2, y_true):
         y_pred = tf.linalg.norm(embeddings_1 - embeddings_2, axis=1)
-        
+
         if self.crossentropy:
-            loss = tf.keras.losses.binary_crossentropy(
-                y_true, y_pred, from_logits=False, label_smoothing=0
-            )
+            loss = tf.keras.losses.binary_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0)
             return tf.reduce_mean(loss)
         else:
             loss = tfa.losses.contrastive_loss(y_true, y_pred, margin=self.margin)
@@ -38,7 +37,9 @@ class ContrastiveLoss(tf.keras.layers.Layer):
     def euclidean_distance(self, x, y):
         return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
 
-    def call(self, embeddings_1, embeddings_2, labels):
+    def call(self, inputs):
+        embeddings_1, embeddings_2, labels = inputs[ANCHOR], inputs[POSITIVE], inputs[LABELS]
+
         if self.normalize:
             embeddings_1 = tf.nn.l2_normalize(embeddings_1, axis=1)
             embeddings_2 = tf.nn.l2_normalize(embeddings_2, axis=1)
@@ -60,4 +61,4 @@ class ContrastiveLoss(tf.keras.layers.Layer):
         self.add_metric(loss, name=self.name, aggregation="mean")
         self.add_metric(distance_pos, name="distance_pos", aggregation="mean")
         self.add_metric(distance_neg, name="distance_neg", aggregation="mean")
-        return embeddings_1, embeddings_2, labels
+        return inputs

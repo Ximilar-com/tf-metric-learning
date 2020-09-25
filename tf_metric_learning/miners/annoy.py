@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 
 import os
@@ -8,7 +7,18 @@ from tf_metric_learning.utils.index import AnnoyDataIndex
 
 
 class TripletAnnoyMiner(AnnoyDataIndex):
-    def __init__(self, base_model, eb_size, labels, metric="euclidean", save_dir=None, progress=False, normalize_eb=True, normalize_fn=None, **kwargs):
+    def __init__(
+        self,
+        base_model,
+        eb_size,
+        labels,
+        metric="euclidean",
+        save_dir=None,
+        progress=False,
+        normalize_eb=True,
+        normalize_fn=None,
+        **kwargs
+    ):
         super().__init__(eb_size, labels, metric=metric, save_dir=save_dir, progress=progress)
 
         self.base_model = base_model
@@ -24,8 +34,8 @@ class TripletAnnoyMiner(AnnoyDataIndex):
 
     def mine_item(self, ids, distances, label, operator, index):
         labels = np.asarray([self.get_label(result) for result in ids])
-        indexes = np.where(labels==label)[0] if operator else np.where(labels!=label)[0]
-        item_id =  ids[indexes[index]] if len(indexes) else None
+        indexes = np.where(labels == label)[0] if operator else np.where(labels != label)[0]
+        item_id = ids[indexes[index]] if len(indexes) else None
         return item_id
 
     def search_hardest_negative(self, embedding, label, n=20):

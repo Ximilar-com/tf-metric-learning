@@ -20,7 +20,7 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
         self.ids = self.create_ids(labels)
 
     def create_ids(self, labels):
-        return {i:label for i, label in enumerate(labels)}
+        return {i: label for i, label in enumerate(labels)}
 
     def get_label(self, index):
         return self.ids[index]
@@ -32,7 +32,9 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
     def reindex(self, embeddings):
         self.index = AnnoyIndex(self.eb_size, self.metric)
 
-        for i, embedding in tqdm(enumerate(embeddings), ncols=100, total=len(embeddings), disable=not self.progress, desc="Indexing ... "):
+        for i, embedding in tqdm(
+            enumerate(embeddings), ncols=100, total=len(embeddings), disable=not self.progress, desc="Indexing ... "
+        ):
             self.index.add_item(i, embedding)
 
         self.index.build(10)
@@ -46,4 +48,3 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
 
     def search(self, embedding, include_distances=False, n=20):
         return self.index.get_nns_by_vector(embedding, n, search_k=-1, include_distances=include_distances)
-
