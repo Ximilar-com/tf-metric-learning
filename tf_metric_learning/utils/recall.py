@@ -35,6 +35,7 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
         self.freq = int(freq)
         self.normalize_eb = normalize_eb
         self.normalize_fn = normalize_fn
+        self.results = {}
 
     def on_epoch_begin(self, epoch, logs=None):
         if self.freq and epoch % self.freq == 0:
@@ -57,8 +58,10 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
                 embeddings_search = tf.nn.l2_normalize(embeddings_search, axis=1).numpy()
 
             self.reindex(embeddings_store)
+            self.evaluate(embeddings_store, embeddings_search)
 
-            results = []
+    def evaluate(self, embeddings_store, embeddings_search):
+            self.results = {"default": []}
             for i, embedding in tqdm(
                 enumerate(embeddings_search),
                 ncols=100,
@@ -68,10 +71,10 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
             ):
                 annoy_results = self.search(embedding, n=20, include_distances=False)
                 annoy_results = [self.get_label(result) for result in annoy_results]
-                recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 3, 5, 10, 20])
-                results.append(recalls)
+                recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 4, 10, 20])
+                self.results["default"].append(recalls)
 
-            print("\nRecall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(results), axis=0), "\n")
+            print("\nRecall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(self.results["default"]), axis=0), "\n")
 
     def eval_recall(self, annoy_results, label, recalls):
         return [1 if label in annoy_results[:recall_n] else 0 for recall_n in recalls]

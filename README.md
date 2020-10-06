@@ -32,6 +32,7 @@ This library contains code that has been adapted and modified from the following
 * [pytorch-metric-learning](https://github.com/KevinMusgrave/pytorch-metric-learning)
 * [geonm](https://github.com/geonm?tab=repositories)
 * [nixingyang](https://github.com/nixingyang/Proxy-Anchor-Loss)
+* [daigo0927](https://github.com/daigo0927/tf-simple-metric-learning)
 
 ### TODO
 

@@ -41,9 +41,9 @@ class NPairLoss(tf.keras.layers.Layer):
         return tf.reduce_mean(tf.sqrt(tf.maximum(tf.reduce_sum(tf.square(x - y), axis=1), tf.keras.backend.epsilon())))
 
     def call(self, inputs):
-        # as the labels are unique in batch
-        embeddings_a, embeddings_p, labels = inputs[ANCHOR], inputs[POSITIVE], inputs[LABELS]
+        embeddings_a, embeddings_p = inputs[ANCHOR], inputs[POSITIVE]
 
+        # as the labels are unique in batch, we are not using inputs[LABELS]
         labels_new = tf.range(tf.shape(embeddings_a)[0])
         loss = self.loss_fn(embeddings_a, embeddings_p, labels_new)
         loss = loss * self.weight
