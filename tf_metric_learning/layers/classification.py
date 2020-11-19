@@ -40,14 +40,14 @@ class TaggingLoss(tf.keras.layers.Layer):
     "MultiLabel/Binary loss function. (Sigmoid)"
 
     def __init__(self, weight=1.0, **kwargs):
-        super(ClassificationLoss, self).__init__(**kwargs)
+        super(TaggingLoss, self).__init__(**kwargs)
         self.loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=False)
         self.metric_fn = tf.keras.metrics.binary_accuracy
         self.weight = weight
 
     def get_config(self):
         config = {"weight": self.weight}
-        base_config = super(ClassificationLoss, self).get_config()
+        base_config = super(TaggingLoss, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     def call(self, inputs):

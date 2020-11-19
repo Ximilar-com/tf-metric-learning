@@ -83,3 +83,28 @@ class TripletNormalizeLayer(tf.keras.layers.Layer):
             NEGATIVE: tf.keras.backend.l2_normalize(inputs[NEGATIVE], axis=1),
             LABELS: labels,
         }
+
+
+class L2RegularizationLayer(tf.keras.layers.Layer):
+    def __init__(self, weight=0.002, **kwargs):
+        super(L2RegularizationLayer, self).__init__(**kwargs)
+
+        self.weight = weight
+
+    def get_config(self):
+        config = {"weight": self.weight}
+        base_config = super(L2RegularizationLayer, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def loss_fn(self, embeddings):
+        "Regularize output of embeddings"
+        reg_embed = tf.math.reduce_mean(tf.math.reduce_sum(tf.math.square(embeddings), 1))
+        l2loss = tf.math.multiply(self.weight, reg_embed)
+        return l2loss
+
+    def call(self, inputs):
+        loss = self.loss_fn(inputs[EMBEDDINGS])
+
+        self.add_loss(loss)
+        self.add_metric(loss, name="L2REG", aggregation="mean")
+        return inputs

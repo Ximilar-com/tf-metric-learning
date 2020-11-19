@@ -23,13 +23,13 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
     @tf.function
-    def loss_fn(self, embeddings_1, embeddings_2):
+    def loss_fn(self, embeddings_1, embeddings_2, labels):
         batch_size = tf.shape(embeddings_2)[0]
 
         embeddings = tf.concat([embeddings_1, embeddings_2], axis=0)
         embeddings = tf.nn.l2_normalize(embeddings, axis=1)
 
-        labels = tf.concat([tf.range(batch_size), tf.range(batch_size)], axis=0)
+        # labels = tf.concat([tf.range(batch_size), tf.range(batch_size)], axis=0)
         labels = tf.reshape(labels, [-1, 1])
 
         adjacency = tf.equal(labels, tf.transpose(labels))
@@ -57,8 +57,8 @@ class MultiSimilarityLoss(tf.keras.layers.Layer):
         return loss
 
     def call(self, inputs):
-        embeddings_a, embeddings_p = inputs[ANCHOR], inputs[POSITIVE]
-        loss = self.loss_fn(embeddings_a, embeddings_p)
+        embeddings_a, embeddings_p, labels = inputs[ANCHOR], inputs[POSITIVE], inputs[LABELS]
+        loss = self.loss_fn(embeddings_a, embeddings_p, labels)
         loss = loss * self.weight
 
         self.add_loss(loss)
