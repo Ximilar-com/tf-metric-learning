@@ -39,26 +39,30 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
 
     def on_epoch_begin(self, epoch, logs=None):
         if self.freq and epoch % self.freq == 0:
-            store_images = (
-                self.normalize_fn(self.data_store["images"])
-                if self.normalize_fn is not None
-                else self.data_store["images"]
-            )
-            search_images = (
-                self.normalize_fn(self.data_search["images"])
-                if self.normalize_fn is not None
-                else self.data_search["images"]
-            )
+            self.compute_data()
 
-            embeddings_store = self.base_model.predict(store_images, batch_size=self.batch_size)
-            embeddings_search = self.base_model.predict(search_images, batch_size=self.batch_size)
+    def compute_data(self):
+        store_images = (
+            self.normalize_fn(self.data_store["images"])
+            if self.normalize_fn is not None
+            else self.data_store["images"]
+        )
+        search_images = (
+            self.normalize_fn(self.data_search["images"])
+            if self.normalize_fn is not None
+            else self.data_search["images"]
+        )
 
-            if self.normalize_eb:
-                embeddings_store = tf.nn.l2_normalize(embeddings_store, axis=1).numpy()
-                embeddings_search = tf.nn.l2_normalize(embeddings_search, axis=1).numpy()
+        print("Store images:",len(store_images))
+        embeddings_store = self.base_model.predict(store_images, batch_size=self.batch_size)
+        embeddings_search = self.base_model.predict(search_images, batch_size=self.batch_size)
 
-            self.reindex(embeddings_store)
-            self.evaluate(embeddings_store, embeddings_search)
+        if self.normalize_eb:
+            embeddings_store = tf.nn.l2_normalize(embeddings_store, axis=1).numpy()
+            embeddings_search = tf.nn.l2_normalize(embeddings_search, axis=1).numpy()
+
+        self.reindex(embeddings_store)
+        self.evaluate(embeddings_store, embeddings_search)
 
     def evaluate(self, embeddings_store, embeddings_search):
             self.results = {"default": []}
