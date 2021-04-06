@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="tf-metric-learning",
-    version="1.0.2",
+    version="1.0.5",
     description="Image similarity, metric learning loss functions for TensorFlow 2+.",
     url="https://github.com/Ximilar-com/tf-metric-learning",
     author="Michal Lukac & Ximilar.com Team",
