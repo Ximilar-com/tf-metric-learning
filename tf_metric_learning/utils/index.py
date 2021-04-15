@@ -25,19 +25,24 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
     def get_label(self, index):
         return self.ids[index]
 
+    def create_index(self):
+        self.index = AnnoyIndex(self.eb_size, self.metric)
+
+    def build(self, k=5):
+        self.index.build(k)
+
     def load_index_file(self, file_path):
         self.index = AnnoyIndex(self.eb_size, self.metric)
         self.index.load(file_path, prefault=False)
 
-    def reindex(self, embeddings):
-        self.index = AnnoyIndex(self.eb_size, self.metric)
-
-        for i, embedding in tqdm(
-            enumerate(embeddings), ncols=100, total=len(embeddings), disable=not self.progress, desc="Indexing ... "
-        ):
+    def add_to_index(self, embeddings):
+        for i, embedding in enumerate(embeddings):
             self.index.add_item(i, embedding)
 
-        self.index.build(10)
+    def reindex(self, embeddings):
+        self.create_index()
+        self.add_to_index(embeddings)
+        self.build(10)
 
         if self.save_dir:
             os.makedirs(self.save_dir, exist_ok=True)
