@@ -35,9 +35,8 @@ class AnnoyDataIndex(tf.keras.callbacks.Callback):
         self.index = AnnoyIndex(self.eb_size, self.metric)
         self.index.load(file_path, prefault=False)
 
-    def add_to_index(self, embeddings):
-        for i, embedding in enumerate(embeddings):
-            self.index.add_item(i, embedding)
+    def add_to_index(self, i, embedding):
+        self.index.add_item(i, embedding)
 
     def reindex(self, embeddings):
         self.create_index()

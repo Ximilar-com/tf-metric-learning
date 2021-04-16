@@ -48,13 +48,16 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
 
     def compute_data(self):
         self.create_index()
+        i = 0
         with tqdm(total=len(self.data_store["images"]), desc="Indexing ... ") as pbar:
             for batch in self.batch(self.data_store["images"], n=self.batch_size*10):
                 store_images = self.normalize_fn(batch) if self.normalize_fn is not None else batch
                 embeddings_store = self.base_model.predict(store_images, batch_size=self.batch_size)
                 if self.normalize_eb:
                     embeddings_store = tf.nn.l2_normalize(embeddings_store, axis=1).numpy()
-                self.add_to_index(embeddings_store)
+                for embedding in embeddings_store:
+                    self.add_to_index(i, embedding)
+                    i += 1
                 pbar.update(len(batch))
         self.build(k=5)
         self.evaluate(self.data_search["images"])
@@ -62,17 +65,19 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
     def evaluate(self, images):
         self.results = {"default": []}
 
+        i = 0
         with tqdm(total=len(images), desc="Evaluating ... ") as pbar:
             for batch in self.batch(images, n=self.batch_size*10):
                 search_images = self.normalize_fn(batch) if self.normalize_fn is not None else batch
                 embeddings_search = self.base_model.predict(search_images, batch_size=self.batch_size)
                 if self.normalize_eb:
                     embeddings_search = tf.nn.l2_normalize(embeddings_search, axis=1).numpy()
-                for i, embedding in enumerate(embeddings_search):
+                for embedding in embeddings_search:
                     annoy_results = self.search(embedding, n=20, include_distances=False)
                     annoy_results = [self.get_label(result) for result in annoy_results]
-                    recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 4, 10, 20])
+                    recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 5, 10, 20])
                     self.results["default"].append(recalls)
+                    i += 1
                 pbar.update(len(batch))
 
             print("\nRecall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(self.results["default"]), axis=0), "\n")
