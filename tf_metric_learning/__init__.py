@@ -2,7 +2,7 @@
 Implementation of several metric learning operations in TensorFlow 2+.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.11"
 
 from . import layers, miners
 
