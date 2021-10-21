@@ -1,9 +1,8 @@
 from setuptools import setup, find_packages
 
-from tf_metric_learning import __version__
-
 import os
 
+__version__ = "1.0.11"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
