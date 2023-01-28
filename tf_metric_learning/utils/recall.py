@@ -75,12 +75,12 @@ class AnnoyEvaluatorCallback(AnnoyDataIndex):
                 for embedding in embeddings_search:
                     annoy_results = self.search(embedding, n=20, include_distances=False)
                     annoy_results = [self.get_label(result) for result in annoy_results]
-                    recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 5, 10, 20])
+                    recalls = self.eval_recall(annoy_results, self.data_search["labels"][i], [1, 5, 10, 20,100])
                     self.results["default"].append(recalls)
                     i += 1
                 pbar.update(len(batch))
 
-            print("\nRecall@[1, 3, 5, 10, 20] Computed:", np.mean(np.asarray(self.results["default"]), axis=0), "\n")
+            print("\nRecall@[1, 3, 5, 10, 20,100] Computed:", np.mean(np.asarray(self.results["default"]), axis=0), "\n")
 
     def eval_recall(self, annoy_results, label, recalls):
         return [1 if label in annoy_results[:recall_n] else 0 for recall_n in recalls]
